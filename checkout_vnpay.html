@@ -26,7 +26,7 @@ import { supabase, VND, requireBuyer, txCode } from './buyer.js';
 const u=requireBuyer(); if(!u) throw new Error('no user');
 
 let items=[], sub=0, ordersCreated=[];
-const API_BASE = 'http://localhost:3000'; // API backend
+const API_BASE = '';
 
 async function load(){
   const r=await supabase.from('cart_items').select('*').eq('user_id', u.user_id);
