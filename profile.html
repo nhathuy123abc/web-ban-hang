@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thông tin tài khoản · E-Shop</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <link rel="stylesheet" href="theme.css">
+
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --light-bg: #f8f9fa;
+      --dark-text: #212529;
+      --gray-text: #6c757d;
+      --border-color: #e9ecef;
+      --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+    
+    /* Navbar mới sẽ dùng unified-navbar từ style.css */
+    
+    .page-head {
+      background: linear-gradient(180deg, #ffffff, #f8fbfd);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    }
+    
+    .crumb a {
+      color: var(--gray-text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .crumb a:hover {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    
+    .card-profile {
+      border-radius: 20px;
+      border: none;
+      box-shadow: var(--card-shadow);
+      background: #ffffff;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .card-profile:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
+    
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      margin: 0 auto;
+      border: 4px solid white;
+      box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .profile-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 2rem 1rem 1.5rem;
+      text-align: center;
+      margin: -1.5rem -1.5rem 1.5rem;
+      border-radius: 0 0 30px 30px;
+    }
+    
+    .label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray-text);
+      margin-bottom: 0.3rem;
+    }
+    
+    .value {
+      font-weight: 500;
+      color: var(--dark-text);
+      font-size: 1.05rem;
+    }
+    
+    .badge-role {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 50px;
+      font-weight: 600;
+    }
+    
+    .info-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid var(--primary);
+      transition: all 0.3s;
+    }
+    
+    .info-card:hover {
+      background: #ffffff;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .status-active {
+      color: #28a745;
+      font-weight: 600;
+    }
+    
+    .status-inactive {
+      color: #dc3545;
+      font-weight: 600;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+    
+    .btn-edit {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border: none;
+      color: white;
+      border-radius: 10px;
+      padding: 0.6rem 1.5rem;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .btn-edit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.5rem;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .btn-secondary:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+      .avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+      }
+      
+      .profile-header {
+        padding: 1.5rem 1rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- NAV: dùng renderHeader giống các trang khác -->
+  <nav class="navbar navbar-expand-lg unified-navbar px-4">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="fas fa-shopping-cart"></i>
+        E-Shop
+      </a>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto" id="nav-menu"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header nhỏ -->
+  <header class="page-head py-3">
+    <div class="container">
+      <nav class="crumb small" aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item"><a href="index.html">Trang chủ</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Thông tin tài khoản</li>
+        </ol>
+      </nav>
+      <h4 class="mt-1 mb-0 fw-bold">Hồ sơ của bạn</h4>
+    </div>
+  </header>
+
+  <main class="container my-4">
+    <div id="profileCard" class="card card-profile p-0">
+      <div class="profile-header">
+        <div id="avatar" class="avatar mb-3">?</div>
+        <h5 id="pf-username" class="mb-1 fw-bold"></h5>
+        <div id="pf-role" class="mt-2"></div>
+      </div>
+      
+      <div class="p-4">
+        <div class="section-title">Thông tin cá nhân</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="label">Họ tên</div>
+              <div id="pf-full-name" class="value">–</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="label">Email</div>
+              <div id="pf-email" class="value">–</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="label">Số điện thoại</div>
+              <div id="pf-phone" class="value">–</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="label">Địa chỉ</div>
+              <div id="pf-address" class="value">–</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="section-title mt-4">Thông tin tài khoản</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="label">Trạng thái</div>
+              <div id="pf-status" class="value">–</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="label">Ngày tạo tài khoản</div>
+              <div id="pf-created" class="value">–</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="btn btn-edit">
+            <i class="fas fa-edit me-2"></i>Chỉnh sửa hồ sơ
+          </button>
+          <button class="btn btn-secondary">
+            <i class="fas fa-lock me-2"></i>Đổi mật khẩu
+          </button>
+          <a href="spin.html" class="btn btn-outline-primary" id="btnSpinHeader"><i class="fa fa-gift me-2"></i>Quay Vòng</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <main class="container mb-4">
+    <div class="card mt-3 p-3">
+      <div class="section-title">Mã giảm giá của tôi</div>
+      <div id="myVouchers">
+        <p class="text-muted">Đang tải mã giảm giá...</p>
+      </div>
+    </div>
+  </main>
+  <main class="container mb-4">
+    <div class="card mt-3 p-3">
+      <div class="section-title">Lịch sử quay</div>
+      <div id="spinHistory">
+        <p class="text-muted">Đang tải lịch sử quay...</p>
+      </div>
+    </div>
+  </main>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Chỉnh sửa hồ sơ</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editProfileForm">
+              <div class="mb-3">
+                <label class="form-label">Họ tên</label>
+                <input id="inp-full-name" class="form-control" type="text" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input id="inp-email" class="form-control" type="email" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Số điện thoại</label>
+                <input id="inp-phone" class="form-control" type="text" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Địa chỉ</label>
+                <input id="inp-address" class="form-control" type="text" />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+            <button id="saveProfileBtn" type="button" class="btn btn-primary">Lưu thay đổi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePwdModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Đổi mật khẩu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="changePwdForm">
+              <div class="mb-3">
+                <label class="form-label">Mật khẩu hiện tại</label>
+                <input id="inp-current-pwd" class="form-control" type="password" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Mật khẩu mới</label>
+                <input id="inp-new-pwd" class="form-control" type="password" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Xác nhận mật khẩu mới</label>
+                <input id="inp-confirm-pwd" class="form-control" type="password" />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+            <button id="savePwdBtn" type="button" class="btn btn-primary">Đổi mật khẩu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- dùng lại buyer.js & components.js để có sb, window.me, renderHeader -->
+  <script src="buyer.js"></script>
+  <script src="components.js"></script>
+  <script>
+    // render header, tab đang active là 'profile'
+    if (typeof renderHeader === 'function') {
+      renderHeader('profile');
+    }
+
+    // mapping role id -> tên
+    const ROLE_LABEL = {
+      1: 'Quản trị viên',
+      2: 'Người bán',
+      3: 'Người mua'
+    };
+
+    (async function initProfile(){
+      // Lấy thông tin user hiện tại
+      if (!window.me) {
+        const raw = localStorage.getItem('currentUser');
+        if (raw) {
+          try { window.me = JSON.parse(raw); } catch(e){}
+        }
+      }
+      if (!window.me) {
+        // chưa đăng nhập -> đá về trang login
+        location.href = 'login.html';
+        return;
+      }
+
+      // lấy chi tiết mới nhất từ database (users table)
+      // sb được khởi tạo trong buyer.js
+      let userRow = null;
+      try {
+        const { data, error } = await sb
+          .from('users')
+          .select('user_id, username, full_name, email, phone, address, role_id, status, created_at')
+          .eq('user_id', window.me.user_id)
+          .maybeSingle();
+
+        if (error) {
+          console.error(error);
+        }
+        userRow = data || window.me; // fallback dùng localStorage
+      } catch (err) {
+        console.error(err);
+        userRow = window.me;
+      }
+
+      // fill UI
+      const username = userRow.username || userRow.email || 'Người dùng';
+      const fullName = userRow.full_name || 'Chưa cập nhật';
+      const email = userRow.email || 'Chưa cập nhật';
+      const phone = userRow.phone || 'Chưa cập nhật';
+      const address = userRow.address || 'Chưa cập nhật';
+      const status = userRow.status || 'active';
+      const createdAt = userRow.created_at
+        ? new Date(userRow.created_at).toLocaleString('vi-VN')
+        : 'Không rõ';
+
+      const firstLetter = (fullName || username).charAt(0).toUpperCase();
+
+      document.getElementById('avatar').textContent = firstLetter;
+      document.getElementById('pf-username').textContent = username;
+
+      const roleId = userRow.role_id;
+      const roleName = ROLE_LABEL[roleId] || 'Không xác định';
+      document.getElementById('pf-role').innerHTML =
+        `<span class="badge-role badge bg-${roleId===1?'danger':roleId===2?'warning text-dark':'success'}">
+          <i class="fa fa-user me-1"></i>${roleName}
+        </span>`;
+
+      document.getElementById('pf-full-name').textContent = fullName;
+      document.getElementById('pf-email').textContent = email;
+      document.getElementById('pf-phone').textContent = phone;
+      document.getElementById('pf-address').textContent = address;
+      
+      const statusElement = document.getElementById('pf-status');
+      statusElement.textContent = status === 'active' ? 'Đang hoạt động' :
+        status === 'inactive' ? 'Bị khóa' : status;
+      statusElement.className = status === 'active' ? 'value status-active' : 'value status-inactive';
+      
+      document.getElementById('pf-created').textContent = createdAt;
+
+      // --- Handlers for Edit / Change Password ---
+      const editBtn = document.querySelector('.btn-edit');
+      const pwdBtn = document.querySelector('.btn-secondary');
+      const editModalEl = document.getElementById('editProfileModal');
+      const pwdModalEl = document.getElementById('changePwdModal');
+      const editModal = new bootstrap.Modal(editModalEl);
+      const pwdModal = new bootstrap.Modal(pwdModalEl);
+
+      editBtn && editBtn.addEventListener('click', ()=>{
+        document.getElementById('inp-full-name').value = userRow.full_name || '';
+        document.getElementById('inp-email').value = userRow.email || '';
+        document.getElementById('inp-phone').value = userRow.phone || '';
+        document.getElementById('inp-address').value = userRow.address || '';
+        editModal.show();
+      });
+
+      document.getElementById('saveProfileBtn').addEventListener('click', async function(){
+        const btn = this; btn.disabled = true;
+        const full_name = document.getElementById('inp-full-name').value.trim();
+        const email = document.getElementById('inp-email').value.trim();
+        const phone = document.getElementById('inp-phone').value.trim();
+        const address = document.getElementById('inp-address').value.trim();
+
+        const payload = { full_name: full_name || null, email: email || null, phone: phone || null, address: address || null };
+        try{
+          const { error } = await sb.from('users').update(payload).eq('user_id', window.me.user_id);
+          if(error){ toast('Lỗi khi lưu: ' + error.message, 'danger'); btn.disabled = false; return; }
+          // cập nhật UI + localStorage
+          userRow = Object.assign({}, userRow, payload);
+          window.me = Object.assign({}, window.me, payload);
+          localStorage.setItem('currentUser', JSON.stringify(window.me));
+          document.getElementById('pf-full-name').textContent = userRow.full_name || 'Chưa cập nhật';
+          document.getElementById('pf-email').textContent = userRow.email || 'Chưa cập nhật';
+          document.getElementById('pf-phone').textContent = userRow.phone || 'Chưa cập nhật';
+          document.getElementById('pf-address').textContent = userRow.address || 'Chưa cập nhật';
+          document.getElementById('avatar').textContent = (userRow.full_name||userRow.username||'Người dùng').charAt(0).toUpperCase();
+          toast('Cập nhật hồ sơ thành công', 'success');
+          editModal.hide();
+        }catch(e){ console.error(e); toast('Lỗi không xác định','danger'); }
+        btn.disabled = false;
+      });
+
+      pwdBtn && pwdBtn.addEventListener('click', ()=>{
+        document.getElementById('inp-current-pwd').value = '';
+        document.getElementById('inp-new-pwd').value = '';
+        document.getElementById('inp-confirm-pwd').value = '';
+        pwdModal.show();
+      });
+
+      document.getElementById('savePwdBtn').addEventListener('click', async function(){
+        const btn = this; btn.disabled = true;
+        const current = document.getElementById('inp-current-pwd').value || '';
+        const nw = document.getElementById('inp-new-pwd').value || '';
+        const conf = document.getElementById('inp-confirm-pwd').value || '';
+        if(nw.length < 6){ toast('Mật khẩu mới cần ít nhất 6 ký tự','warning'); btn.disabled = false; return; }
+        if(nw !== conf){ toast('Mật khẩu mới và xác nhận không khớp','warning'); btn.disabled = false; return; }
+
+        try{
+          // verify current password (note: DB uses plain password field in this project)
+          const r = await sb.from('users').select('password').eq('user_id', window.me.user_id).maybeSingle();
+          if(r.error){ toast('Không thể xác minh mật khẩu: '+r.error.message,'danger'); btn.disabled = false; return; }
+          const stored = (r.data && r.data.password) || '';
+          if(stored !== current){ toast('Mật khẩu hiện tại không đúng','danger'); btn.disabled = false; return; }
+
+          const { error } = await sb.from('users').update({ password: nw }).eq('user_id', window.me.user_id);
+          if(error){ toast('Lỗi đổi mật khẩu: '+error.message,'danger'); btn.disabled = false; return; }
+          // update local copy (if exists)
+          window.me = Object.assign({}, window.me, { password: nw });
+          localStorage.setItem('currentUser', JSON.stringify(window.me));
+          toast('Đổi mật khẩu thành công', 'success');
+          pwdModal.hide();
+        }catch(e){ console.error(e); toast('Lỗi không xác định','danger'); }
+        btn.disabled = false;
+      });
+
+        // --- Load user's vouchers and render ---
+        async function loadMyVouchers(){
+          try{
+            const r = await sb.from('user_vouchers').select('user_voucher_id, is_used, assigned_at, vouchers(*)').eq('user_id', window.me.user_id).order('assigned_at', { ascending: false });
+            if(r.error) throw r.error;
+            const list = r.data || [];
+            const el = document.getElementById('myVouchers');
+            if(!list.length){ el.innerHTML = `<div class="text-muted">Bạn chưa có mã giảm giá nào. Hãy quay vòng để nhận mã!</div>`; return; }
+            const rows = list.map(u=>{
+              const v = u.vouchers || {};
+              const used = u.is_used ? '<span class="badge bg-secondary">Đã dùng</span>' : '<span class="badge bg-success">Chưa dùng</span>';
+              const exp = v.expires_at ? new Date(v.expires_at).toLocaleDateString('vi-VN') : 'Không hạn';
+              return `<div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <div class="fw-bold">${v.voucher_code || '—'}</div>
+                  <div class="small text-muted">Giảm ${v.discount_percent || 0}% • Đơn tối thiểu ${Number(v.min_order_amount||0).toLocaleString('vi-VN')} ₫ • Hạn: ${exp}</div>
+                </div>
+                <div class="text-end">${used}<div class="small text-muted mt-1">${new Date(u.assigned_at).toLocaleString('vi-VN')}</div></div>
+              </div>`;
+            }).join('');
+            el.innerHTML = rows;
+          }catch(e){ console.error(e); document.getElementById('myVouchers').innerHTML = `<div class="text-danger">Không tải được mã giảm giá: ${e.message}</div>`; }
+        }
+
+        // call loadMyVouchers after init
+        loadMyVouchers();
+      
+        // --- Load user's spin history ---
+        async function loadSpinHistory(){
+          try{
+            const r = await sb.from('user_spins').select('spin_id, created_at, wheel_segments(segment_id,label,discount_percent)').eq('user_id', window.me.user_id).order('created_at', { ascending: false }).limit(50);
+            if(r.error) throw r.error;
+            const list = r.data || [];
+            const el = document.getElementById('spinHistory');
+            if(!list.length){ el.innerHTML = `<div class="text-muted">Bạn chưa quay lần nào.</div>`; return; }
+            const rows = list.map(s=>{
+              const seg = s.wheel_segments || {};
+              const won = (Number(seg.discount_percent||0) > 0) ? `<span class="badge bg-success">Trúng ${seg.discount_percent}%</span>` : `<span class="badge bg-secondary">Không trúng</span>`;
+              return `<div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <div class="fw-bold">${seg.label || '—'}</div>
+                  <div class="small text-muted">${new Date(s.created_at).toLocaleString('vi-VN')}</div>
+                </div>
+                <div class="text-end">${won}</div>
+              </div>`;
+            }).join('');
+            el.innerHTML = rows;
+          }catch(e){ console.error(e); document.getElementById('spinHistory').innerHTML = `<div class="text-danger">Không tải được lịch sử quay: ${e.message}</div>`; }
+        }
+        loadSpinHistory();
+
+    })();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

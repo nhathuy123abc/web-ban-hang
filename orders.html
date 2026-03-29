@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đơn hàng của tôi | E-Shop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #0f172a;
+      --accent: #06b6d4;
+      --light-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-dark: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--light-bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    /* Navbar styles mới sẽ dùng unified-navbar từ style.css */
+
+    .page-header {
+      background: linear-gradient(135deg, var(--secondary), var(--primary));
+      color: white;
+      padding: 2rem 0;
+      margin-bottom: 2rem;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+
+    .page-title {
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    .filter-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+    }
+
+    .order-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .order-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .order-header {
+      background: var(--light-bg);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .order-id {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .order-date {
+      color: var(--text-light);
+      font-size: 0.875rem;
+    }
+
+    .order-body {
+      padding: 1.5rem;
+    }
+
+    .order-store {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .order-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .status-pending {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .status-confirmed {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--info);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .status-shipping {
+      background: rgba(6, 182, 212, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+    }
+
+    .status-delivered {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-cancelled {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .order-footer {
+      padding: 1rem 1.5rem;
+      background: var(--light-bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .order-total {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+
+    .order-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      font-weight: 500;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+
+    .btn-outline {
+      border: 1px solid var(--border);
+      color: var(--text-light);
+    }
+
+    .btn-outline:hover {
+      background: var(--light-bg);
+      color: var(--text-dark);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      color: var(--text-light);
+      margin-bottom: 1rem;
+    }
+
+    .empty-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-text {
+      color: var(--text-light);
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-content {
+      border-radius: var(--radius);
+      border: none;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+      background: var(--light-bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-weight: 700;
+    }
+
+    .review-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .review-modal .stars {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .review-modal .star {
+      font-size: 1.5rem;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .review-modal .star.active {
+      color: #f59e0b;
+    }
+
+    .review-modal textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    footer {
+      background: var(--secondary);
+      color: #94a3b8;
+      padding: 2.5rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+
+    .footer-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .footer-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .footer-link {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: var(--accent);
+    }
+
+    .copyright {
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .order-header, .order-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      
+      .order-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+      
+      .page-header {
+        padding: 1.5rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg unified-navbar px-4">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="fas fa-shopping-cart"></i>
+        E-Shop
+      </a>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto" id="nav-menu"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <div id="toastArea"></div>
+
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Đơn hàng của tôi</h1>
+      <p class="page-subtitle">Theo dõi và quản lý đơn hàng của bạn</p>
+    </div>
+  </div>
+
+  <div class="container my-4">
+    <div class="filter-card">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Lọc theo trạng thái</label>
+          <select id="st" class="form-select">
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending">Đang chờ xác nhận</option>
+            <option value="completed">Hoàn thành</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button id="btnFilter" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-1"></i> Lọc
+          </button>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end align-items-end">
+          <div class="text-muted small" id="orderCount">Đang tải...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="orderList">
+      <div class="order-card">
+        <div class="order-body text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+          </div>
+          <p class="mt-3 text-muted">Đang tải đơn hàng...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <i class="fas fa-laptop-code me-2"></i> E-Shop
+        </div>
+        <p>Cửa hàng điện tử hàng đầu Việt Nam với đa dạng sản phẩm công nghệ chính hãng</p>
+        <div class="footer-links">
+          <a href="#" class="footer-link">Về chúng tôi</a>
+          <a href="#" class="footer-link">Chính sách bảo mật</a>
+          <a href="#" class="footer-link">Điều khoản sử dụng</a>
+          <a href="#" class="footer-link">Hỗ trợ</a>
+          <a href="#" class="footer-link">Liên hệ</a>
+        </div>
+        <div class="copyright">
+          © 2025 E-Shop. Powered by Supabase
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Review Modal -->
+  <div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Viết đánh giá</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body review-modal">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Sản phẩm</label>
+            <p id="reviewProductName" class="mb-0"></p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Đánh giá sao</label>
+            <div class="stars" id="ratingStars">
+              <span class="star" data-rating="1"><i class="far fa-star"></i></span>
+              <span class="star" data-rating="2"><i class="far fa-star"></i></span>
+              <span class="star" data-rating="3"><i class="far fa-star"></i></span>
+              <span class="star" data-rating="4"><i class="far fa-star"></i></span>
+              <span class="star" data-rating="5"><i class="far fa-star"></i></span>
+            </div>
+            <input type="hidden" id="selectedRating" value="5">
+          </div>
+          <div class="mb-3">
+            <label for="reviewContent" class="form-label fw-semibold">Nội dung đánh giá</label>
+            <textarea class="form-control" id="reviewContent" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Hủy</button>
+          <button type="button" class="btn btn-primary" id="submitReview">Gửi đánh giá</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === GIỮ NGUYÊN KIỂU "CODE CŨ"
+    const SUPABASE_URL='https://qpnqsvueowqtqnzqdyqh.supabase.co';
+    const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwbnFzdnVlb3dxdHFuenFkeXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5ODg1NDMsImV4cCI6MjA3NTU2NDU0M30.dtNEnYlLLa9mTP9Oi6uvS7PkQ2IoH6SMhXemPa0uSfs';
+    if (!window.supabase_client) {
+      window.supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      if (!window.sb) window.sb = window.supabase_client;
+    }
+    var sb = window.supabase_client;
+
+    // Header (giống bản cũ)
+    const me = JSON.parse(localStorage.getItem('currentUser')||'null');
+    const nav = document.getElementById('nav-menu');
+    if(me){
+      let roleMenu='';
+      if(me.role_id===1) roleMenu = `<li class="nav-item"><a class="nav-link" href="admin.html">Quản trị</a></li>`;
+      if(me.role_id===2) roleMenu = `<li class="nav-item"><a class="nav-link" href="seller.html">Cửa hàng của tôi</a></li>`;
+      // Giữ cả 2: cart và wishlist
+      if(me.role_id===3) roleMenu = `<li class="nav-item"><a class="nav-link" href="cart.html"><i class="fas fa-shopping-cart me-1"></i> Giỏ hàng</a></li><li class="nav-item"><a class="nav-link" href="wishlist.html"><i class="fas fa-heart me-1"></i> Yêu thích</a></li>`;
+
+      nav.innerHTML = `
+        <li class="nav-item"><a class="nav-link" href="index.html">Trang chủ</a></li>
+        ${roleMenu}
+        <li class="nav-item"><a class="nav-link text-info"><i class="fas fa-user me-1"></i> ${me.username||me.email}</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="localStorage.removeItem('currentUser');location.reload()">Đăng xuất</a></li>`;
+    }else{
+      nav.innerHTML = `
+        <li class="nav-item"><a class="nav-link" href="index.html">Trang chủ</a></li>
+        <li class="nav-item"><a class="nav-link" href="login.html">Đăng nhập</a></li>
+        <li class="nav-item"><a class="nav-link" href="register.html">Đăng ký</a></li>`;
+    }
+
+    // ===== STATE
+    let orders=[], storeMap=new Map();
+    const VND = v => Number(v||0).toLocaleString('vi-VN')+' ₫';
+
+    // ===== FUNCTIONS
+    async function requireLogin() {
+      if (!me) {
+        window.location.href = 'login.html';
+        return false;
+      }
+      return true;
+    }
+
+    async function loadOrders(){ 
+      if (!await requireLogin()) return;
+      
+      const rs = await sb
+        .from('orders')
+        .select('*, payments(status)')
+        .eq('buyer_id', me.user_id)
+        .order('created_at', {ascending:false})
+        .limit(500);
+      if (rs.error) console.error('loadOrders error', rs.error);
+      orders = rs.data||[];
+      console.log('loaded orders count', orders.length, rs);
+      
+      const sids = [...new Set(orders.map(o=>o.store_id))]; 
+      if(sids.length){ 
+        const st = await sb.from('stores').select('store_id, store_name').in('store_id', sids); 
+        (st.data||[]).forEach(s=>storeMap.set(s.store_id, s.store_name)); 
+      }
+      
+      // Attempt to fetch payments separately and merge them into orders.
+      try {
+        const orderIds = orders.map(o=>o.order_id).filter(Boolean);
+        if (orderIds.length) {
+          const payRes = await sb.from('payments').select('order_id,status').in('order_id', orderIds);
+          if (payRes.error) {
+            console.warn('payments fetch warning', payRes.error);
+          } else {
+            const payMap = new Map();
+            (payRes.data||[]).forEach(p => payMap.set(p.order_id, p));
+            orders = orders.map(o => ({ ...o, payments: payMap.has(o.order_id) ? [payMap.get(o.order_id)] : [] }));
+            console.log('payments merged, count=', payRes.data?.length || 0);
+          }
+        }
+      } catch (e) {
+        console.error('payments merge error', e);
+      }
+
+      render();
+    }
+
+    // Reload orders mỗi 3 giây để cập nhật status từ VNPay callback
+    setInterval(loadOrders, 3000);
+
+    function render(){ 
+      const st = document.getElementById('st').value;
+      const filteredOrders = orders.filter(o => {
+        const payStatus = o.payments && o.payments.length > 0 ? o.payments[0].status : null;
+        let statusVal = (o.status || o.order_status || '').toString().trim().toLowerCase();
+        if ((statusVal === 'pending' && payStatus === 'completed') || statusVal === 'confirmed' || statusVal === 'delivered') {
+          statusVal = 'completed';
+        }
+        return !st || statusVal === st;
+      });
+      
+      document.getElementById('orderCount').textContent = `${filteredOrders.length} đơn hàng`;
+      
+      if (!filteredOrders.length) {
+        document.getElementById('orderList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <i class="fas fa-box-open"></i>
+            </div>
+            <h4 class="empty-title">Không có đơn hàng</h4>
+            <p class="empty-text">Bạn chưa có đơn hàng nào phù hợp với bộ lọc hiện tại.</p>
+            <a href="index.html" class="btn btn-primary">Tiếp tục mua sắm</a>
+          </div>`;
+        return;
+      }
+      
+      document.getElementById('orderList').innerHTML = filteredOrders.map(o => {
+        const payStatus = o.payments && o.payments.length > 0 ? o.payments[0].status : null;
+        let displayStatus = (o.status || o.order_status || '').toString().trim().toLowerCase();
+        if ((displayStatus === 'pending' && payStatus === 'completed') || displayStatus === 'confirmed' || displayStatus === 'delivered') {
+          displayStatus = 'completed';
+        }
+
+        // DEBUG: expose raw statuses in console
+        console.log('order', o.order_id, 'order_status=', o.order_status, 'status=', o.status, 'payment=', payStatus, '=> display=', displayStatus);
+
+        return `
+        <div class="order-card">
+          <div class="order-header">
+            <div>
+              <span class="order-id">#${o.order_id}</span>
+              ${payStatus === 'completed' ? '<span class="badge bg-success ms-2 small">Đã thanh toán</span>' : ''}
+              <span class="order-date ms-2">${new Date(o.created_at).toLocaleString('vi-VN')}</span>
+              <small class="text-muted ms-3">raw: ${o.order_status||''}/${payStatus||'no-pay'}</small>
+            </div>
+            <span class="order-status ${getStatusClass(displayStatus)}">
+              <i class="fas ${getStatusIcon(displayStatus)}"></i>
+              ${getStatusText(displayStatus)}
+            </span>
+          </div>
+          <div class="order-body">
+            <div class="order-store">
+              <i class="fas fa-store text-muted"></i>
+              ${storeMap.get(o.store_id)||('Shop #'+o.store_id)}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <div>
+                <small class="text-muted">Tổng giá trị đơn hàng</small>
+                <div class="order-total">${VND(o.total_price)}</div>
+              </div>
+              <div class="order-actions">
+                <button class="btn btn-outline btn-sm" onclick="openDetail(${o.order_id}, '${displayStatus}')">
+                  <i class="fas fa-eye me-1"></i> Chi tiết
+                </button>
+                ${displayStatus === 'completed' ? `
+                  <button class="btn btn-primary btn-sm" onclick="openReviewModal(${o.order_id})">
+                    <i class="fas fa-star me-1"></i> Đánh giá
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    function getStatusClass(status) {
+      switch(status) {
+        case 'pending': return 'status-pending';
+        case 'completed': return 'status-delivered';
+        case 'shipping': return 'status-shipping';
+        case 'cancelled': return 'status-cancelled';
+        default: return 'status-pending';
+      }
+    }
+
+    function getStatusIcon(status) {
+      switch(status) {
+        case 'pending': return 'fa-clock';
+        case 'completed': return 'fa-check-circle';
+        case 'shipping': return 'fa-shipping-fast';
+        case 'cancelled': return 'fa-times-circle';
+        default: return 'fa-clock';
+      }
+    }
+
+    function getStatusText(status) {
+      switch(status) {
+        case 'pending': return 'Đang chờ xác nhận';
+        case 'completed': return 'Hoàn thành';
+        case 'shipping': return 'Đang giao hàng';
+        case 'cancelled': return 'Đã hủy';
+        default: return status;
+      }
+    }
+
+    window.openDetail = async (id, st) => { 
+      const box = document.createElement('div'); 
+      box.className='modal fade'; 
+      box.innerHTML=`
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Chi tiết đơn hàng #${id}</h5>
+              <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div id="od"></div>
+              <div id="rvBtns" class="mt-3"></div>
+            </div>
+          </div>
+        </div>`; 
+      document.body.appendChild(box);
+      
+      const modal = new bootstrap.Modal(box); 
+      modal.show();
+      
+      // Load từ order_details table (không phải order_items)
+      const items = await sb.from('order_details').select('*').eq('order_id', id);
+      document.getElementById('od').innerHTML = items.data?.length ? 
+        `<table class='table'>
+          <thead>
+            <tr>
+              <th>Sản phẩm</th>
+              <th class='text-end'>Số lượng</th>
+              <th class='text-end'>Đơn giá</th>
+              <th class='text-end'>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.data.map(i => `
+              <tr>
+                <td>${i.product_id}</td>
+                <td class='text-end'>${i.quantity}</td>
+                <td class='text-end'>${VND(i.price_each)}</td>
+                <td class='text-end fw-semibold'>${VND(i.price_each * i.quantity)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>` : 
+        '<div class="text-muted text-center py-3">Không có chi tiết đơn hàng</div>';
+      
+      if(st === 'delivered'){ 
+        document.getElementById('rvBtns').innerHTML = `
+          <h6 class="mb-3">Đánh giá sản phẩm</h6>
+          <div class="d-flex flex-wrap gap-2">
+            ${items.data.map(i => `
+              <button class='btn btn-outline-primary btn-sm review-btn' onclick='openReviewModal(${id}, ${i.product_id}, "Sản phẩm #${i.product_id}")'>
+                <i class="fas fa-star me-1"></i> SP #${i.product_id}
+              </button>
+            `).join('')}
+          </div>`;
+      }
+      
+      // Clean up modal after it's closed
+      box.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(box);
+      });
+    };
+
+    let currentOrderId, currentProductId, currentProductName;
+
+    window.openReviewModal = (orderId, productId, productName) => {
+      currentOrderId = orderId;
+      currentProductId = productId;
+      currentProductName = productName;
+      
+      document.getElementById('reviewProductName').textContent = productName || 'Sản phẩm';
+      document.getElementById('selectedRating').value = 5;
+      
+      // Reset stars
+      const stars = document.querySelectorAll('#ratingStars .star');
+      stars.forEach((star, index) => {
+        if (index < 5) {
+          star.innerHTML = '<i class="fas fa-star"></i>';
+          star.classList.add('active');
+        } else {
+          star.innerHTML = '<i class="far fa-star"></i>';
+          star.classList.remove('active');
+        }
+      });
+      
+      document.getElementById('reviewContent').value = '';
+      
+      const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+      reviewModal.show();
+    };
+
+    // Initialize star rating
+    document.addEventListener('DOMContentLoaded', function() {
+      const stars = document.querySelectorAll('#ratingStars .star');
+      stars.forEach(star => {
+        star.addEventListener('click', function() {
+          const rating = parseInt(this.getAttribute('data-rating'));
+          document.getElementById('selectedRating').value = rating;
+          
+          stars.forEach((s, index) => {
+            if (index < rating) {
+              s.innerHTML = '<i class="fas fa-star"></i>';
+              s.classList.add('active');
+            } else {
+              s.innerHTML = '<i class="far fa-star"></i>';
+              s.classList.remove('active');
+            }
+          });
+        });
+      });
+      
+      document.getElementById('submitReview').addEventListener('click', function() {
+        const rating = document.getElementById('selectedRating').value;
+        const content = document.getElementById('reviewContent').value;
+        
+        if (!content.trim()) {
+          alert('Vui lòng nhập nội dung đánh giá');
+          return;
+        }
+        
+        createReview(currentProductId, rating, content);
+        bootstrap.Modal.getInstance(document.getElementById('reviewModal')).hide();
+      });
+    });
+
+    async function createReview(pid, rating, content) {
+      if (!me) {
+        alert('Vui lòng đăng nhập để đánh giá sản phẩm');
+        return;
+      }
+      
+      const res = await sb.from('reviews').insert([
+        { 
+          buyer_id: me.user_id, 
+          product_id: pid, 
+          rating: parseInt(rating), 
+          comment: content,
+          created_at: new Date().toISOString()
+        }
+      ]);
+      
+      if (res.error) {
+        alert('Không thể gửi đánh giá: ' + res.error.message);
+      } else {
+        alert('Cảm ơn bạn đã đánh giá sản phẩm!');
+      }
+    }
+
+    document.getElementById('btnFilter').onclick = render;
+
+    // INIT
+    loadOrders();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="chat-loader.js"></script>
+
+</body>
+</html>

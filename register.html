@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Đăng ký tài khoản | E-Shop</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: url("images/hero-bg.jpg");
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1100px;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+      animation: fadeIn 0.8s ease-out;
+      min-height: 650px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand-section {
+      flex: 1.2;
+      background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+      color: white;
+      padding: 50px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-section::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" opacity="0.05"><path d="M20,20 L80,20 L80,80 L20,80 Z" fill="none" stroke="white" stroke-width="2"/><circle cx="50" cy="50" r="30" fill="none" stroke="white" stroke-width="1.5"/></svg>');
+      background-size: 200px;
+    }
+
+    .brand-logo {
+      font-size: 4rem;
+      margin-bottom: 25px;
+      color: #4cc9f0;
+      z-index: 1;
+    }
+
+    .brand-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      z-index: 1;
+    }
+
+    .brand-subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      line-height: 1.7;
+      max-width: 400px;
+      margin-bottom: 30px;
+      z-index: 1;
+    }
+
+    .features {
+      list-style: none;
+      z-index: 1;
+    }
+
+    .features li {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1rem;
+    }
+
+    .features i {
+      color: #4cc9f0;
+      font-size: 1.2rem;
+    }
+
+  .form-section {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Không căn giữa, để cuộn tự nhiên */
+  overflow-y: auto;            /* Giữ cuộn mượt mà */
+  max-height: 100vh;           /* Chiếm toàn bộ chiều cao cửa sổ */
+  scroll-behavior: smooth;     /* Cuộn mượt */
+}
+
+
+    .form-header {
+      margin-bottom: 25px;
+    }
+
+    .form-title {
+      font-size: 1.8rem;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .form-subtitle {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.9rem;
+    }
+
+    .input-group input, .input-group select {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      color: #1e293b;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .input-group input:focus, .input-group select:focus {
+      border-color: #0f3460;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.1);
+    }
+
+    .input-group {
+  position: relative; /* thêm dòng này để icon bám theo input-group */
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-group i {
+  position: absolute;
+  right: 16px;
+  top: calc(50% + 10px); /* căn giữa theo input, bỏ ảnh hưởng của label */
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+
+
+    .password-requirements {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+
+    .password-requirements ul {
+      padding-left: 20px;
+      margin-top: 5px;
+    }
+
+    .password-requirements li {
+      margin-bottom: 4px;
+    }
+
+    .role-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .role-option {
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .role-option:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .role-option.selected {
+      border-color: #0f3460;
+      background: #f0f7ff;
+    }
+
+    .role-icon {
+      font-size: 1.5rem;
+      color: #0f3460;
+    }
+
+    .role-info h4 {
+      margin-bottom: 4px;
+      color: #1e293b;
+    }
+
+    .role-info p {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .role-option input {
+      display: none;
+    }
+
+    .terms {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 25px;
+      font-size: 0.9rem;
+      color: #374151;
+    }
+
+    .terms input {
+      margin-top: 3px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .terms a {
+      color: #0f3460;
+      font-weight: 500;
+    }
+
+    .terms a:hover {
+      text-decoration: underline;
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(15, 52, 96, 0.2);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(15, 52, 96, 0.3);
+    }
+
+    .btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .login-link a {
+      color: #0f3460;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+    #status {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .status-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .status-warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .status-info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        flex-direction: column;
+        max-width: 500px;
+      }
+      
+      .brand-section {
+        padding: 30px 25px;
+        text-align: center;
+        align-items: center;
+      }
+      
+      .form-section {
+        padding: 30px 25px;
+      }
+      
+      .brand-title {
+        font-size: 2rem;
+      }
+      
+      .brand-subtitle {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <i class="fas fa-shopping-bag"></i>
+      </div>
+      <h1 class="brand-title">Tham gia E-Shop ngay hôm nay</h1>
+      <p class="brand-subtitle">Tạo tài khoản để khám phá thế giới mua sắm trực tuyến với hàng ngàn sản phẩm chất lượng và ưu đãi hấp dẫn.</p>
+      
+      <ul class="features">
+        <li><i class="fas fa-check-circle"></i> Truy cập hàng ngàn sản phẩm đa dạng</li>
+        <li><i class="fas fa-check-circle"></i> Ưu đãi và khuyến mãi đặc biệt</li>
+        <li><i class="fas fa-check-circle"></i> Theo dõi đơn hàng dễ dàng</li>
+        <li><i class="fas fa-check-circle"></i> Hỗ trợ khách hàng 24/7</li>
+      </ul>
+    </div>
+    
+    <div class="form-section">
+      <div class="form-header">
+        <h2 class="form-title">Tạo tài khoản mới</h2>
+        <p class="form-subtitle">Điền thông tin bên dưới để đăng ký tài khoản</p>
+      </div>
+      
+      <form id="registerForm">
+        <div class="input-group">
+          <label for="username">Tên đăng nhập</label>
+          <input type="text" id="username" required placeholder="Nhập tên đăng nhập">
+          <i class="fas fa-user"></i>
+        </div>
+        
+        <div class="input-group">
+          <label for="password">Mật khẩu</label>
+          <input type="password" id="password" required placeholder="Nhập mật khẩu">
+          <i class="fas fa-lock"></i>
+        </div>
+        
+        <div class="password-requirements">
+          <p><strong>Yêu cầu mật khẩu:</strong></p>
+          <ul>
+            <li>Ít nhất 6 ký tự</li>
+            <li>Chứa ít nhất một chữ số</li>
+            <li>Chứa ít nhất một ký tự đặc biệt</li>
+          </ul>
+        </div>
+        
+        <div class="input-group">
+          <label for="full_name">Họ và tên</label>
+          <input type="text" id="full_name" required placeholder="Nhập họ và tên đầy đủ">
+          <i class="fas fa-id-card"></i>
+        </div>
+        
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="Nhập địa chỉ email">
+          <i class="fas fa-envelope"></i>
+        </div>
+        
+        <div class="input-group">
+          <label>Chọn vai trò</label>
+          <div class="role-options">
+            <div class="role-option" data-value="3">
+              <div class="role-icon">
+                <i class="fas fa-shopping-cart"></i>
+              </div>
+              <div class="role-info">
+                <h4>Người mua</h4>
+                <p>Xem và đặt sản phẩm từ các cửa hàng</p>
+              </div>
+              <input type="radio" name="role" value="3" checked>
+            </div>
+            
+            <div class="role-option" data-value="2">
+              <div class="role-icon">
+                <i class="fas fa-store"></i>
+              </div>
+              <div class="role-info">
+                <h4>Người bán</h4>
+                <p>Quản lý cửa hàng và sản phẩm của bạn</p>
+              </div>
+              <input type="radio" name="role" value="2">
+            </div>
+          </div>
+        </div>
+        
+        <div class="terms">
+          <input type="checkbox" id="terms" required>
+          <label for="terms">Tôi đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của E-Shop</label>
+        </div>
+        
+        <button class="btn" type="submit" id="submitBtn">Tạo tài khoản</button>
+        
+        <div id="status" class="status-info"></div>
+        
+        <div class="login-link">
+          <p>Đã có tài khoản? <a href="login.html">Đăng nhập</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://qpnqsvueowqtqnzqdyqh.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwbnFzdnVlb3dxdHFuenFkeXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5ODg1NDMsImV4cCI6MjA3NTU2NDU0M30.dtNEnYlLLa9mTP9Oi6uvS7PkQ2IoH6SMhXemPa0uSfs';
+    if (!window.supabase_client) {
+      window.supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      if (!window.sb) window.sb = window.supabase_client;
+    }
+    var supabase = window.supabase_client;
+
+    const form = document.getElementById('registerForm');
+    const status = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
+    const roleOptions = document.querySelectorAll('.role-option');
+
+    // Xử lý chọn vai trò
+    roleOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        roleOptions.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+        const radio = option.querySelector('input[type="radio"]');
+        radio.checked = true;
+      });
+    });
+
+    // Đặt mặc định chọn người mua
+    document.querySelector('.role-option[data-value="3"]').classList.add('selected');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const full_name = document.getElementById('full_name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const role_id = parseInt(document.querySelector('input[name="role"]:checked').value, 10);
+      const terms = document.getElementById('terms').checked;
+
+      if (!username || !password || !full_name || !email) {
+        showStatus('⚠️ Vui lòng điền đầy đủ thông tin!', 'warning');
+        return;
+      }
+
+      if (!terms) {
+        showStatus('⚠️ Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật!', 'warning');
+        return;
+      }
+
+      // Kiểm tra mật khẩu
+      if (password.length < 6) {
+        showStatus('⚠️ Mật khẩu phải có ít nhất 6 ký tự!', 'warning');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Đang xử lý...';
+
+      showStatus('⏳ Đang kiểm tra dữ liệu...', 'info');
+
+      // Kiểm tra trùng username hoặc email
+      const { data: exists } = await supabase
+        .from('users')
+        .select('username, email')
+        .or(`username.eq.${username},email.eq.${email}`)
+        .maybeSingle();
+
+      if (exists) {
+        showStatus('⚠️ Tên đăng nhập hoặc email đã tồn tại!', 'warning');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Tạo tài khoản';
+        return;
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .insert([{ username, password, full_name, email, role_id, status: 'active' }]);
+
+      if (error) {
+        showStatus('❌ Lỗi tạo tài khoản: ' + error.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Tạo tài khoản';
+        return;
+      }
+
+      // Nếu là người bán thì tạo cửa hàng mặc định
+      if (role_id === 2) {
+        const { data: newUser } = await supabase
+          .from('users')
+          .select('user_id')
+          .eq('username', username)
+          .single();
+
+        if (newUser) {
+          await supabase.from('stores').insert([{
+            user_id: newUser.user_id,
+            store_name: `Cửa hàng của ${full_name}`,
+            description: 'Cửa hàng mới đăng ký',
+            status: 'active'
+          }]);
+        }
+      }
+
+      showStatus('✅ Đăng ký thành công! Đang chuyển hướng...', 'success');
+      
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 1500);
+    });
+
+    function showStatus(message, type) {
+      status.textContent = message;
+      status.className = '';
+      status.classList.add(`status-${type}`);
+      status.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

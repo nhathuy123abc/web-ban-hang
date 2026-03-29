@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yêu thích · E‑Shop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{ --brand:#48d1cc; --ink:#0a192f; }
+    body{background:#f6f8fb}
+    /* Navbar mới sẽ dùng unified-navbar từ style.css */
+
+    .panel{background:#fff;border:1px solid rgba(10,25,47,.06);box-shadow:0 6px 18px rgba(16,24,40,.07);border-radius:14px}
+
+    .thumb{width:100%;height:180px;object-fit:cover;border-top-left-radius:12px;border-top-right-radius:12px}
+    .badge-stock{background:#e8f6f5;color:#0b6b66;border:1px solid #bfe9e6}
+
+    .price{color:var(--brand);font-weight:800}
+    .title{font-weight:600}
+
+    .btn-primary{background:var(--brand);border-color:var(--brand)}
+    .btn-primary:hover{background:#3aa8a5;border-color:#3aa8a5}
+
+    /* Skeleton */
+    .skeleton{position:relative;overflow:hidden;background:#e9eef5;border-radius:14px}
+    .skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+      animation:shimmer 1.4s infinite}
+    @keyframes shimmer{100%{transform:translateX(100%)}}
+
+    .empty{color:#6c7b90}
+    .card-hover:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(16,24,40,.12)}
+    .x-btn{position:absolute;right:.5rem;top:.5rem}
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg unified-navbar px-4">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="fas fa-shopping-cart"></i>
+        E-Shop
+      </a>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto" id="nav-menu"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <div id="toastArea" class="position-fixed top-0 end-0 p-3" style="z-index:1080"></div>
+
+  <main class="container my-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+      <h3 class="mb-0">Danh sách yêu thích</h3>
+      <div class="d-flex gap-2">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fa fa-search"></i></span>
+          <input id="q" class="form-control" placeholder="Tìm theo tên sản phẩm..." />
+        </div>
+        <select id="sort" class="form-select" style="min-width:180px">
+          <option value="default">Sắp xếp: Mặc định</option>
+          <option value="price-asc">Giá tăng dần</option>
+          <option value="price-desc">Giá giảm dần</option>
+          <option value="name-asc">Tên A → Z</option>
+          <option value="name-desc">Tên Z → A</option>
+        </select>
+      </div>
+    </div>
+
+    <section id="grid" class="row g-3"></section>
+
+    <template id="card-tpl">
+      <div class="col-6 col-md-4 col-lg-3">
+        <article class="card panel h-100 position-relative card-hover">
+          <button class="btn btn-light btn-sm x-btn" data-role="remove" title="Bỏ khỏi yêu thích">
+            <i class="fa fa-heart text-danger"></i>
+          </button>
+          <img class="thumb" data-role="img" alt="" loading="lazy" />
+          <div class="card-body text-center pt-3">
+            <div class="title text-truncate mb-1" data-role="title"></div>
+            <div class="small mb-2"><span class="badge badge-stock" data-role="stock"></span></div>
+            <div class="price" data-role="price"></div>
+            <div class="d-grid gap-2 mt-3">
+              <a class="btn btn-outline-secondary" data-role="view"><i class="fa fa-eye me-1"></i>Xem</a>
+              <button class="btn btn-primary" data-role="add"><i class="fa fa-cart-plus me-1"></i>Thêm vào giỏ</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </template>
+
+    <section id="skeleton" class="row g-3">
+      ${Array.from({length:8}).map(()=>`<div class='col-6 col-md-4 col-lg-3'><div class='skeleton' style='height:300px'></div></div>`).join('')}
+    </section>
+
+    <section id="empty" class="panel p-5 text-center d-none">
+      <p class="empty mb-2">Chưa có sản phẩm yêu thích.</p>
+      <a class="btn btn-primary" href="index.html"><i class="fa fa-store me-2"></i>Tiếp tục mua sắm</a>
+    </section>
+  </main>
+
+  <script src="buyer.js"></script>
+  <script src="components.js"></script>
+  <script>renderHeader && renderHeader('wishlist');</script>
+
+  <script>
+    const fmtVND = (n)=> (window.VND ? VND(n) : new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n||0));
+
+    const toastArea = document.getElementById('toastArea');
+    function showToast(msg, type='success'){ const id = 't'+Date.now();
+      toastArea.insertAdjacentHTML('beforeend',`<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="status" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex"><div class="toast-body">${msg}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Đóng"></button></div></div>`);
+      const el = new bootstrap.Toast(document.getElementById(id),{delay:2200}); el.show();}
+
+    const grid = document.getElementById('grid');
+    const skel = document.getElementById('skeleton');
+    const empty = document.getElementById('empty');
+    const tpl = document.getElementById('card-tpl');
+
+    let rawList = [];
+
+    async function loadWish(){
+      try{
+        await requireLogin();
+        const ids = await getWishes();
+        if(!ids || !ids.length){ showEmpty(); return; }
+
+        const rs = await sb.from('products').select('*').in('product_id', ids);
+        rawList = (rs.data||[]).filter(Boolean);
+        render();
+      }catch(e){ console.error(e); showEmpty('Không tải được dữ liệu'); }
+    }
+
+    function showEmpty(msg){
+      skel.classList.add('d-none');
+      grid.innerHTML = '';
+      empty.classList.remove('d-none');
+      if(msg) empty.querySelector('p').textContent = msg;
+    }
+
+    function render(){
+      skel.classList.add('d-none');
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const sort = document.getElementById('sort').value;
+
+      let list = rawList.filter(p => !q || (p.product_name||'').toLowerCase().includes(q));
+
+      if(sort==='price-asc') list.sort((a,b)=>(a.price||0)-(b.price||0));
+      if(sort==='price-desc') list.sort((a,b)=>(b.price||0)-(a.price||0));
+      if(sort==='name-asc') list.sort((a,b)=> (a.product_name||'').localeCompare(b.product_name||''));
+      if(sort==='name-desc') list.sort((a,b)=> (b.product_name||'').localeCompare(a.product_name||''));
+
+      if(!list.length){ showEmpty('Không tìm thấy sản phẩm phù hợp'); return; }
+      empty.classList.add('d-none');
+
+      const frag = document.createDocumentFragment();
+      list.forEach(p=>{
+        const node = tpl.content.cloneNode(true);
+        const card = node.querySelector('article');
+        const img = node.querySelector('[data-role="img"]');
+        const title = node.querySelector('[data-role="title"]');
+        const price = node.querySelector('[data-role="price"]');
+        const stock = node.querySelector('[data-role="stock"]');
+        const add = node.querySelector('[data-role="add"]');
+        const view = node.querySelector('[data-role="view"]');
+        const removeBtn = node.querySelector('[data-role="remove"]');
+
+        img.src = p.image_url || 'https://via.placeholder.com/400x300?text=No+Image';
+        img.alt = p.product_name || '';
+        title.textContent = p.product_name || 'Sản phẩm';
+        price.textContent = fmtVND(p.price);
+        stock.textContent = p.stock>0 ? `Còn ${p.stock}` : 'Hết hàng';
+        view.href = 'product.html?id=' + p.product_id;
+
+        add.onclick = async ()=>{ await addToCart(p.product_id,1); showToast('Đã thêm vào giỏ hàng'); }
+        removeBtn.onclick = async ()=>{
+          await toggleWish(p.product_id);
+          showToast('Đã bỏ khỏi danh sách yêu thích','warning');
+          // cập nhật danh sách cục bộ để không cần reload
+          rawList = rawList.filter(x=> x.product_id !== p.product_id);
+          render();
+        }
+
+        frag.appendChild(node);
+      })
+      grid.innerHTML = '';
+      grid.appendChild(frag);
+    }
+
+    document.getElementById('q').addEventListener('input',()=>render());
+    document.getElementById('sort').addEventListener('change',()=>render());
+
+    loadWish();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

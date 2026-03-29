@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E‑Shop Admin Pro</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root{--dark:#0f172a;--primary:#3b82f6;--primary-2:#1e40af;--bg:#f1f5f9;--radius:14px;--shadow:0 8px 26px rgba(2,6,23,.08)}
+    body{background:var(--bg);font-family:'Segoe UI',sans-serif}
+    .sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:linear-gradient(180deg,var(--dark),#1f2937);color:#cbd5e1;padding:14px 12px}
+    .sidebar .brand{color:#60a5fa;font-weight:700;font-size:18px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+    .nav-link{color:#cbd5e1}
+    .nav-link.active,.nav-link:hover{color:#fff;background:rgba(255,255,255,.06);border-radius:10px}
+    .main{margin-left:260px;padding:20px}
+    .card{border:none;border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card-header{background:#fff;border-bottom:none;border-radius:var(--radius) var(--radius) 0 0}
+    .kpi .icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#e2e8f0;color:#1e293b}
+    .table thead{background:#f8fafc}
+    .badge-status{font-size:.78rem}
+    #toastArea{position:fixed;top:14px;right:14px;z-index:1080}
+    .sidebar{z-index:1050}
+    @media (max-width: 991px){ .sidebar{position:static;width:100%} .main{margin-left:0} }
+    /* HEADER ĐEN */
+.unified-navbar{
+  background: linear-gradient(90deg,#020617,#0f172a);
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  z-index: 1100;
+}
+.unified-navbar .navbar-brand,
+.unified-navbar .nav-link{
+  color:#fff !important;
+}
+.unified-navbar .nav-link:hover{
+  color:#93c5fd !important;
+}
+
+  </style>
+</head>
+<body>
+  <!-- NAVBAR THỐNG NHẤT -->
+  <nav class="navbar navbar-expand-lg unified-navbar px-4">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="fas fa-shopping-cart"></i>
+        E-Shop
+      </a>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto" id="nav-menu"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand"><i class="fa-solid fa-crown"></i> E‑Shop Admin Pro</div>
+    <hr class="border-secondary opacity-25">
+    <ul class="nav nav-pills flex-column gap-1" id="sideNav">
+      <li class="nav-item"><a class="nav-link active" href="#" data-page="dashboard"><i class="fa fa-gauge me-2"></i>Tổng quan</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-page="users"><i class="fa fa-users me-2"></i>Người dùng</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-page="stores"><i class="fa fa-store me-2"></i>Cửa hàng</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-page="products"><i class="fa fa-box me-2"></i>Sản phẩm</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-page="categories"><i class="fa fa-tags me-2"></i>Danh mục</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-page="orders"><i class="fa fa-clipboard-list me-2"></i>Đơn & thanh toán</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-page="wheel"><i class="fa fa-gift me-2"></i>Vòng Quay</a></li>
+      <li class="nav-item mt-2"><a class="nav-link" href="#" id="btnLogout"><i class="fa fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+    </ul>
+  </div>
+
+  <div id="toastArea"></div>
+
+  <!-- MAIN -->
+  <main class="main">
+     <div id="page-wheel" class="page d-none">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fa fa-gift me-2"></i>Vòng Quay & Mã giảm giá</span>
+        <div>
+          <button class="btn btn-sm btn-primary" id="btnAddSegment"><i class="fa fa-plus me-1"></i>Thêm phần thưởng</button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead><tr><th>ID</th><th>Label</th><th>Giảm (%)</th><th>Min đơn</th><th>Probability</th><th>Active</th><th></th></tr></thead>
+            <tbody id="wheelTable"><tr><td colspan="7" class="text-center py-3 text-muted">Đang tải...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h3 class="mb-0"><i class="fa-solid fa-screwdriver-wrench me-2 text-primary"></i>Khu vực quản trị</h3>
+      <div id="adminInfo" class="text-muted small"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page">
+      <div class="row g-3 kpi">
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div class="icon"><i class="fa fa-users"></i></div>
+              <div><div class="text-muted">Người dùng</div><div class="h4 mb-0" id="kpiUsers">-</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card"><div class="card-body d-flex align-items-center gap-3">
+            <div class="icon"><i class="fa fa-store"></i></div>
+            <div><div class="text-muted">Cửa hàng</div><div class="h4 mb-0" id="kpiStores">-</div></div>
+          </div></div>
+        </div>
+        <div class="col-md-3">
+          <div class="card"><div class="card-body d-flex align-items-center gap-3">
+            <div class="icon"><i class="fa fa-box"></i></div>
+            <div><div class="text-muted">Sản phẩm</div><div class="h4 mb-0" id="kpiProducts">-</div></div>
+          </div></div>
+        </div>
+        <div class="col-md-3">
+          <div class="card"><div class="card-body d-flex align-items-center gap-3">
+            <div class="icon"><i class="fa fa-receipt"></i></div>
+            <div><div class="text-muted">Đơn (30 ngày)</div><div class="h4 mb-0" id="kpiOrders">-</div></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="fa fa-chart-column me-2"></i>Doanh thu theo tháng</span>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary active" id="btn6m">6 tháng</button>
+                <button class="btn btn-outline-primary" id="btn12m">12 tháng</button>
+              </div>
+            </div>
+            <div class="card-body"><canvas id="revenueChart" height="110"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header"><i class="fa fa-chart-pie me-2"></i>Phân bổ trạng thái đơn</div>
+            <div class="card-body"><canvas id="statusChart" height="230"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa fa-bell me-2"></i>Hoạt động gần đây</span>
+          <span class="small text-muted" id="activityHint">Realtime bật</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Thời gian</th><th>Sự kiện</th><th>Chi tiết</th></tr></thead>
+              <tbody id="activityTable"><tr><td colspan="3" class="text-center py-3 text-muted">Đang nghe sự kiện...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div id="page-users" class="page d-none">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa fa-users me-2"></i>Người dùng</span>
+          <div class="d-flex gap-2">
+            <input id="uKw" class="form-control form-control-sm" placeholder="Tìm tên / email">
+            <select id="uRole" class="form-select form-select-sm">
+              <option value="">Tất cả vai trò</option>
+              <option value="1">Admin</option><option value="2">Seller</option><option value="3">Buyer</option>
+            </select>
+            <select id="uStatus" class="form-select form-select-sm">
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Hoạt động</option><option value="inactive">Không hoạt động</option><option value="suspended">Tạm ngưng</option>
+            </select>
+            <button class="btn btn-primary btn-sm" id="btnUserFilter"><i class="fa fa-filter me-1"></i>Lọc</button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>ID</th><th>Tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Ngày tạo</th><th></th></tr></thead>
+              <tbody id="userTable"><tr><td colspan="7" class="text-center py-3 text-muted">Đang tải...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STORES -->
+    <div id="page-stores" class="page d-none">
+      <div class="card">
+        <div class="card-header"><i class="fa fa-store me-2"></i>Cửa hàng</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>ID</th><th>Tên cửa hàng</th><th>Seller</th><th>Trạng thái</th><th>Ngày tạo</th><th></th></tr></thead>
+              <tbody id="storeTable"><tr><td colspan="6" class="text-center py-3 text-muted">Đang tải...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="page-products" class="page d-none">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa fa-box me-2"></i>Sản phẩm</span>
+          <div class="d-flex gap-2">
+            <input id="pKw" class="form-control form-control-sm" placeholder="Tìm tên">
+            <select id="pStatus" class="form-select form-select-sm">
+              <option value="">Tất cả TT</option><option value="active">Đang bán</option><option value="inactive">Ngừng bán</option><option value="out_of_stock">Hết hàng</option>
+            </select>
+            <button class="btn btn-primary btn-sm" id="btnProductFilter"><i class="fa fa-filter me-1"></i>Lọc</button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>ID</th><th>Ảnh</th><th>Tên</th><th>Giá</th><th>Tồn</th><th>Store</th><th>TT</th><th></th></tr></thead>
+              <tbody id="productTable"><tr><td colspan="8" class="text-center py-3 text-muted">Đang tải...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div id="page-categories" class="page d-none">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa fa-tags me-2"></i>Danh mục</span>
+          <button class="btn btn-primary btn-sm" id="btnAddCate"><i class="fa fa-plus me-1"></i>Thêm</button>
+        </div>
+        <div class="card-body">
+          <div id="cateTree" class="small text-muted">Đang tải...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div id="page-orders" class="page d-none">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa fa-clipboard-list me-2"></i>Đơn & thanh toán</span>
+          <div class="d-flex gap-2">
+            <select id="oStatus" class="form-select form-select-sm">
+              <option value="">Tất cả</option><option value="pending">Đang chờ</option><option value="confirmed">Đã xác nhận</option><option value="shipping">Đang giao</option><option value="delivered">Đã giao</option><option value="cancelled">Đã hủy</option>
+            </select>
+            <button class="btn btn-outline-primary btn-sm" id="btnExportOrders"><i class="fa fa-file-export me-1"></i>Xuất CSV</button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>Mã đơn</th><th>Store</th><th>Khách</th><th class="text-end">Tổng</th><th>Trạng thái</th><th>Ngày tạo</th></tr></thead>
+              <tbody id="orderTable"><tr><td colspan="6" class="text-center py-3 text-muted">Đang tải...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- WHEEL ADMIN PAGE -->
+ 
+
+  <script>
+  async function loadWheelAdmin(){
+    const r = await supabase.from('wheel_segments').select('*').order('segment_id');
+    const segs = r.data || [];
+    document.getElementById('wheelTable').innerHTML = segs.map(s=>`<tr><td>${s.segment_id}</td><td>${s.label}</td><td>${s.discount_percent}</td><td>${Number(s.min_order_amount||0).toLocaleString('vi-VN')}</td><td>${Number(s.probability||0)}</td><td>${s.active?'<span class="badge bg-success">Yes</span>':'<span class="badge bg-secondary">No</span>'}</td><td><button class="btn btn-sm btn-outline-primary" onclick="editSegment(${s.segment_id})">Sửa</button></td></tr>`).join('') || `<tr><td colspan="7" class="text-center py-3 text-muted">Không có phần thưởng</td></tr>`;
+  }
+
+  document.getElementById('btnAddSegment').addEventListener('click', ()=>{
+    const label = prompt('Tên phần thưởng (vd: Giảm 10%)'); if(!label) return;
+    const disc = Number(prompt('Phần trăm giảm (số nguyên)', '10')||0);
+    const minOrder = Number(prompt('Min đơn (VNĐ)', '0')||0);
+    const prob = Number(prompt('Probability (ví dụ 0.2 cho 20% - tổng do admin quản lý)', '1')||1);
+    (async ()=>{
+      const { error } = await supabase.from('wheel_segments').insert([{ label, discount_percent: disc, min_order_amount: minOrder, probability: prob }]);
+      if(error) return toast('Lỗi: '+error.message,'danger'); toast('Đã thêm phần thưởng','success'); loadWheelAdmin();
+    })();
+  });
+
+  window.editSegment = async (id)=>{
+    const cur = await supabase.from('wheel_segments').select('*').eq('segment_id', id).maybeSingle();
+    if(!cur.data) return toast('Không tìm thấy','warning');
+    const s = cur.data; const label = prompt('Label', s.label); if(!label) return;
+    const disc = Number(prompt('Phần trăm giảm', s.discount_percent)||0);
+    const minOrder = Number(prompt('Min đơn (VNĐ)', s.min_order_amount||0)||0);
+    const prob = Number(prompt('Probability', s.probability||1)||1);
+    const active = confirm('Kích hoạt phần thưởng? OK=Yes Cancel=No');
+    const { error } = await supabase.from('wheel_segments').update({ label, discount_percent: disc, min_order_amount: minOrder, probability: prob, active }).eq('segment_id', id);
+    if(error) return toast('Lỗi: '+error.message,'danger'); toast('Đã lưu','success'); loadWheelAdmin();
+  };
+
+  // lazy load when admin clicks nav
+  document.querySelector('[data-page="wheel"]').addEventListener('click', ()=>{ loadWheelAdmin(); });
+  </script>
+
+  <!-- MODAL: EDIT USER -->
+  <div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-light"><h5 class="modal-title"><i class="fa fa-user-pen me-2"></i>Chỉnh sửa người dùng</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="hidden" id="uId">
+          <div class="mb-2">
+            <label class="form-label">Họ tên</label>
+            <input id="uFull" class="form-control">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Vai trò</label>
+            <select id="uRoleEdit" class="form-select">
+              <option value="1">Admin</option><option value="2">Seller</option><option value="3">Buyer</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Trạng thái</label>
+            <select id="uStatusEdit" class="form-select">
+              <option value="active">Hoạt động</option><option value="inactive">Không hoạt động</option><option value="suspended">Tạm ngưng</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          <button class="btn btn-primary" id="btnSaveUser">Lưu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  // ===== Supabase =====
+  const SUPABASE_URL='https://qpnqsvueowqtqnzqdyqh.supabase.co';
+  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwbnFzdnVlb3dxdHFuenFkeXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5ODg1NDMsImV4cCI6MjA3NTU2NDU0M30.dtNEnYlLLa9mTP9Oi6uvS7PkQ2IoH6SMhXemPa0uSfs';
+  if (!window.supabase_client) {
+    window.supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  var supabase = window.supabase_client;
+
+  // ===== Toast =====
+  function toast(msg,type='info'){ const id='t'+Date.now(); const bg=type==='success'?'bg-success text-white':type==='danger'?'bg-danger text-white':type==='warning'?'bg-warning':'bg-light'; const el=document.createElement('div'); el.className=`toast align-items-center ${bg} border-0 mb-2`; el.innerHTML=`<div class="d-flex"><div class="toast-body">${msg}</div><button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div>`; document.getElementById('toastArea').appendChild(el); const t=new bootstrap.Toast(el,{delay:2500}); t.show(); setTimeout(()=>el.remove(),2800); }
+
+  // ===== Auth guard (local "currentUser" as in your project) =====
+  const me=JSON.parse(localStorage.getItem('currentUser'));
+  if(!me){ alert('Bạn cần đăng nhập!'); location.href='login.html'; }
+  if(me.role_id!==1){ alert('Bạn không có quyền Admin!'); location.href='index.html'; }
+  document.getElementById('adminInfo').textContent = `Admin: ${me.username||me.email||('ID '+me.user_id)}`;
+  
+  // Setup navbar menu
+  document.getElementById('nav-menu').innerHTML = `
+    <li class="nav-item"><a class="nav-link" href="index.html">Trang chủ</a></li>
+    <li class="nav-item"><a class="nav-link text-info" href="#">${me.username || me.email}</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="localStorage.removeItem('currentUser');location.href='login.html'">Đăng xuất</a></li>
+  `;
+
+  // ===== Page Switch =====
+  document.querySelectorAll('#sideNav .nav-link').forEach(a=>a.addEventListener('click',e=>{
+    e.preventDefault();
+    const page=a.dataset.page;
+    document.querySelectorAll('#sideNav .nav-link').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+    document.querySelectorAll('.page').forEach(p=>p.classList.add('d-none'));
+    document.getElementById('page-'+page).classList.remove('d-none');
+    // lazy load
+    if(page==='users') loadUsers();
+    if(page==='stores') loadStores();
+    if(page==='products') loadProducts();
+    if(page==='categories') loadCategories();
+    if(page==='orders') loadOrders();
+  }));
+  document.getElementById('btnLogout').onclick=()=>{ localStorage.removeItem('currentUser'); location.href='login.html'; };
+
+  // ===== KPI + Charts =====
+  async function loadKPI(){
+    const u = await supabase.from('users').select('*',{count:'exact', head:true});
+    const s = await supabase.from('stores').select('*',{count:'exact', head:true});
+    const p = await supabase.from('products').select('*',{count:'exact', head:true});
+    const since = new Date(); since.setDate(since.getDate()-30);
+    const o = await supabase.from('orders').select('order_id, created_at').gte('created_at', since.toISOString());
+    document.getElementById('kpiUsers').textContent=u.count||0;
+    document.getElementById('kpiStores').textContent=s.count||0;
+    document.getElementById('kpiProducts').textContent=p.count||0;
+    document.getElementById('kpiOrders').textContent=o.data?o.data.length:0;
+  }
+
+  function VND(v){ return Number(v||0).toLocaleString('vi-VN')+' ₫'; }
+
+  async function drawCharts(months=6){
+    // revenue by month
+    const rs = await supabase.from('orders').select('total_price, order_status, created_at');
+    const map=new Map();
+    (rs.data||[]).filter(o=>['confirmed','delivered'].includes(o.order_status)).forEach(o=>{
+      const d=new Date(o.created_at); const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      map.set(k,(map.get(k)||0)+Number(o.total_price||0));
+    });
+    const now=new Date(); const data=[];
+    for(let i=months-1;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; data.push({label:k,value:map.get(k)||0}); }
+    if(window._rev) window._rev.destroy();
+    window._rev = new Chart(document.getElementById('revenueChart'),{
+      type:'bar', data:{ labels:data.map(x=>x.label), datasets:[{label:'Doanh thu', data:data.map(x=>x.value)}] },
+      options:{ plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>VND(c.raw)}}}, scales:{y:{ticks:{callback:v=>Number(v).toLocaleString('vi-VN')}}} }
+    });
+
+    // status pie
+    const g={pending:0,confirmed:0,shipping:0,delivered:0,cancelled:0};
+    (rs.data||[]).forEach(o=> g[o.order_status]=(g[o.order_status]||0)+1);
+    if(window._st) window._st.destroy();
+    window._st = new Chart(document.getElementById('statusChart'),{
+      type:'doughnut', data:{ labels:Object.keys(g), datasets:[{ data:Object.values(g) }] }, options:{ plugins:{legend:{position:'bottom'}} }
+    });
+  }
+  document.getElementById('btn6m').onclick=()=>{ drawCharts(6); document.getElementById('btn6m').classList.add('active'); document.getElementById('btn12m').classList.remove('active'); };
+  document.getElementById('btn12m').onclick=()=>{ drawCharts(12); document.getElementById('btn12m').classList.add('active'); document.getElementById('btn6m').classList.remove('active'); };
+
+  // ===== Recent Activity (Realtime) =====
+  const actBody=document.getElementById('activityTable');
+  function pushActivity(text, detail){
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td class="text-muted">${new Date().toLocaleString('vi-VN')}</td><td>${text}</td><td class="small text-muted">${detail||''}</td>`;
+    actBody.prepend(tr);
+  }
+  supabase
+    .channel('admin_stream')
+    .on('postgres_changes',{event:'INSERT', schema:'public', table:'orders'}, (payload)=>{
+      const o=payload.new; pushActivity('Đơn mới', `#${o.order_id} tổng ${VND(o.total_price)}`);
+      loadKPI(); drawCharts(6);
+    })
+    .on('postgres_changes',{event:'INSERT', schema:'public', table:'users'}, (payload)=>{
+      const u=payload.new; pushActivity('User đăng ký', u.username||u.email||('ID '+u.user_id)); loadKPI();
+    })
+    .subscribe();
+
+  // ===== Users =====
+  let users=[];
+  async function loadUsers(){
+    const rs = await supabase.from('users').select('user_id, username, email, full_name, role_id, status, created_at').order('user_id');
+    users = rs.data||[]; renderUsers(users);
+  }
+  function renderUsers(list){
+    const kw=(document.getElementById('uKw').value||'').toLowerCase();
+    const role=document.getElementById('uRole').value; const st=document.getElementById('uStatus').value;
+    const out=list.filter(u=> (!kw || (u.username+u.email+u.full_name).toLowerCase().includes(kw)) && (!role || String(u.role_id)===role) && (!st || u.status===st) );
+    document.getElementById('userTable').innerHTML = out.map(u=>`
+      <tr>
+        <td>${u.user_id}</td>
+        <td>${u.full_name||'-'}<div class="text-muted small">${u.username}</div></td>
+        <td>${u.email||'-'}</td>
+        <td><span class="badge text-bg-${u.role_id==1?'dark':u.role_id==2?'primary':'secondary'}">${u.role_id==1?'Admin':u.role_id==2?'Seller':'Buyer'}</span></td>
+        <td><span class="badge badge-status ${u.status==='active'?'text-bg-success':u.status==='suspended'?'text-bg-danger':'text-bg-secondary'}">${u.status}</span></td>
+        <td>${new Date(u.created_at).toLocaleDateString('vi-VN')}</td>
+        <td><button class="btn btn-sm btn-outline-primary" onclick='openUser(${JSON.stringify(u)})'><i class="fa fa-pen"></i></button></td>
+      </tr>`).join('') || `<tr><td colspan="7" class="text-center py-3 text-muted">Không có dữ liệu</td></tr>`;
+  }
+  document.getElementById('btnUserFilter').onclick=()=>renderUsers(users);
+  window.openUser = (u)=>{
+    document.getElementById('uId').value=u.user_id;
+    document.getElementById('uFull').value=u.full_name||'';
+    document.getElementById('uRoleEdit').value=String(u.role_id);
+    document.getElementById('uStatusEdit').value=u.status||'active';
+    new bootstrap.Modal('#userModal').show();
+  };
+  document.getElementById('btnSaveUser').onclick=async ()=>{
+    const id=document.getElementById('uId').value;
+    const full=document.getElementById('uFull').value;
+    const role=Number(document.getElementById('uRoleEdit').value);
+    const st=document.getElementById('uStatusEdit').value;
+    const {error}=await supabase.from('users').update({full_name:full, role_id:role, status:st}).eq('user_id', id);
+    if(error) return toast('Lỗi cập nhật: '+error.message,'danger');
+    toast('Đã lưu người dùng','success'); bootstrap.Modal.getInstance(document.getElementById('userModal')).hide(); loadUsers(); loadKPI();
+  };
+
+  // ===== Stores =====
+  async function loadStores(){
+    const rs=await supabase.from('stores').select('store_id, store_name, user_id, status, created_at').order('store_id');
+    const list=rs.data||[];
+    document.getElementById('storeTable').innerHTML = list.map(s=>`
+      <tr>
+        <td>${s.store_id}</td><td>${s.store_name}</td><td>${s.user_id}</td>
+        <td><span class="badge ${s.status==='active'?'text-bg-success':s.status==='pending'?'text-bg-warning':'text-bg-secondary'}">${s.status}</span></td>
+        <td>${new Date(s.created_at).toLocaleDateString('vi-VN')}</td>
+        <td><button class="btn btn-sm btn-outline-primary" onclick="editStore(${s.store_id},'${s.status}')"><i class="fa fa-pen"></i></button></td>
+      </tr>`).join('');
+  }
+  window.editStore = async (id, cur)=>{
+    const st = prompt('Trạng thái mới: active / pending / suspended', cur||'active');
+    if(!st) return;
+    if(!['active','pending','suspended'].includes(st)) return toast('Trạng thái không hợp lệ','warning');
+    const {error}=await supabase.from('stores').update({status:st}).eq('store_id', id);
+    if(error) return toast('Lỗi: '+error.message,'danger'); toast('Đã cập nhật','success'); loadStores(); loadKPI();
+  };
+
+  // ===== Products =====
+  let products=[]; let storeMap=new Map();
+  async function loadProducts(){
+    const s=await supabase.from('stores').select('store_id, store_name');
+    (s.data||[]).forEach(x=>storeMap.set(x.store_id, x.store_name));
+    const rs=await supabase.from('products').select('product_id, product_name, price, stock, store_id, status, image_url').order('product_id');
+    products=rs.data||[]; renderProducts(products);
+  }
+  function renderProducts(list){
+    const kw=(document.getElementById('pKw').value||'').toLowerCase();
+    const st=document.getElementById('pStatus').value;
+    const out=list.filter(p=>(!kw || (p.product_name||'').toLowerCase().includes(kw)) && (!st || p.status===st));
+    document.getElementById('productTable').innerHTML = out.map(p=>`
+      <tr>
+        <td>${p.product_id}</td>
+        <td><img src="${p.image_url||'https://via.placeholder.com/50'}" class="rounded" style="width:46px;height:46px;object-fit:cover"></td>
+        <td>${p.product_name}</td>
+        <td class="text-end">${VND(p.price)}</td>
+        <td class="text-end">${p.stock}</td>
+        <td>${storeMap.get(p.store_id)||p.store_id}</td>
+        <td><span class="badge ${p.status==='active'?'text-bg-success':p.status==='out_of_stock'?'text-bg-warning':'text-bg-secondary'}">${p.status}</span></td>
+        <td><button class="btn btn-sm btn-outline-primary" onclick="editProduct(${p.product_id}, '${p.status}')"><i class="fa fa-pen"></i></button></td>
+      </tr>`).join('') || `<tr><td colspan="8" class="text-center py-3 text-muted">Không có dữ liệu</td></tr>`;
+  }
+  document.getElementById('btnProductFilter').onclick=()=>renderProducts(products);
+  window.editProduct=async (id, cur)=>{
+    const st = prompt('Trạng thái: active / inactive / out_of_stock', cur||'active');
+    if(!st) return;
+    if(!['active','inactive','out_of_stock'].includes(st)) return toast('Trạng thái không hợp lệ','warning');
+    const {error}=await supabase.from('products').update({status:st}).eq('product_id', id);
+    if(error) return toast('Lỗi: '+error.message,'danger'); toast('Đã cập nhật','success'); loadProducts();
+  };
+
+  // ===== Categories (tree) =====
+  async function loadCategories(){
+    const rs=await supabase.from('categories').select('category_id, category_name, parent_id');
+    const cats = rs.data||[];
+    const map=new Map(); cats.forEach(c=>map.set(c.category_id,{...c, children:[]}));
+    const roots=[]; cats.forEach(c=>{ if(c.parent_id && map.has(c.parent_id)) map.get(c.parent_id).children.push(map.get(c.category_id)); else roots.push(map.get(c.category_id)); });
+    function render(node, depth=0){
+      const pad=''.padStart(depth*2,'· ');
+      let html = `<div class="d-flex align-items-center justify-content-between"><div>${pad}<i class="fa fa-folder me-1 text-warning"></i>${node.category_name}</div><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" onclick="renameCate(${node.category_id},'${node.category_name.replace(/"/g,'&quot;')}')"><i class="fa fa-pen"></i></button><button class="btn btn-outline-danger" onclick="deleteCate(${node.category_id})"><i class="fa fa-trash"></i></button></div></div>`;
+      if(node.children?.length){ html += `<div class="ms-3 mt-1">${node.children.map(ch=>render(ch, depth+1)).join('')}</div>`; }
+      return `<div class="mb-1">${html}</div>`;
+    }
+    document.getElementById('cateTree').innerHTML = roots.length? roots.map(r=>render(r)).join('') : '<span class="text-muted">Chưa có danh mục</span>';
+    document.getElementById('btnAddCate').onclick=async ()=>{
+      const name=prompt('Tên danh mục?'); if(!name) return;
+      const parent=prompt('ID danh mục cha (bỏ trống nếu là gốc)')||null;
+      const payload = parent? {category_name:name, parent_id:Number(parent)} : {category_name:name};
+      const {error}=await supabase.from('categories').insert([payload]); if(error) return toast('Lỗi: '+error.message,'danger'); toast('Đã thêm','success'); loadCategories();
+    };
+  }
+  window.renameCate = async (id, cur)=>{ const name=prompt('Tên mới', cur||''); if(!name) return; const {error}=await supabase.from('categories').update({category_name:name}).eq('category_id', id); if(error) return toast('Lỗi: '+error.message,'danger'); toast('Đã cập nhật','success'); loadCategories(); };
+  window.deleteCate = async (id)=>{ if(!confirm('Xóa danh mục? Hãy đảm bảo đã chuyển sản phẩm sang danh mục khác.')) return; const {error}=await supabase.from('categories').delete().eq('category_id', id); if(error) return toast('Lỗi: '+error.message,'danger'); toast('Đã xóa','success'); loadCategories(); };
+
+  // ===== Orders =====
+  let orders=[]; let userMap=new Map();
+  async function loadOrders(){
+    const rs=await supabase.from('orders').select('*').order('created_at',{ascending:false}).limit(500);
+    orders=rs.data||[]; const buyerIds=[...new Set(orders.map(o=>o.buyer_id).filter(Boolean))];
+    if(buyerIds.length){ const bu=await supabase.from('users').select('user_id, username').in('user_id', buyerIds); (bu.data||[]).forEach(u=>userMap.set(u.user_id, u.username)); }
+    renderOrders();
+  }
+  function renderOrders(){
+    const st=document.getElementById('oStatus').value;
+    const out=orders.filter(o=>!st || o.order_status===st);
+    document.getElementById('orderTable').innerHTML = out.map(o=>`
+      <tr>
+        <td class="fw-semibold">#${o.order_id}</td>
+        <td>${o.store_id}</td>
+        <td>${userMap.get(o.buyer_id)||('Khách #'+(o.buyer_id||'-'))}</td>
+        <td class="text-end">${VND(o.total_price)}</td>
+        <td>
+  <span class="badge ${
+    o.order_status === 'delivered'
+      ? 'text-bg-success'
+      : o.order_status === 'pending'
+      ? 'text-bg-primary'
+      : 'text-bg-secondary'
+  }">
+    ${o.order_status === 'pending' ? 'confirmed' : o.order_status}
+  </span>
+</td>
+
+        <td>${new Date(o.created_at).toLocaleString('vi-VN')}</td>
+      </tr>`).join('') || `<tr><td colspan="6" class="text-center py-3 text-muted">Không có dữ liệu</td></tr>`;
+  }
+  document.getElementById('oStatus').onchange=renderOrders;
+  document.getElementById('btnExportOrders').onclick=()=>{
+    const rows=[['Order','Store','Buyer','Total','Status','CreatedAt']].concat(orders.map(o=>['#'+o.order_id,o.store_id,userMap.get(o.buyer_id)||('Buyer#'+(o.buyer_id||'-')),o.total_price,o.order_status,o.created_at]));
+    const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='orders.csv'; a.click();
+  };
+
+  // ===== Init =====
+  (async function init(){
+    await loadKPI(); await drawCharts(6);
+    // Default dashboard open; others lazy load on click
+  })();
+  </script>
+// ...existing code...
+  <script src="chat-loader.js"></script>
+
+  <!-- Khởi động admin chat monitor khi chat.js đã load -->
+  <script>
+  (function waitForChat(){
+    const start = Date.now();
+    const timer = setInterval(()=>{
+      if (window.CHAT && typeof window.CHAT.subscribeAdminMonitor === 'function') {
+        clearInterval(timer);
+        if (me && me.role_id === 1) {
+          try {
+            window.CHAT.subscribeAdminMonitor();
+            console.log('[admin] chat monitor started');
+          } catch (e) {
+            console.error('[admin] start monitor failed', e);
+          }
+        }
+      }
+      if (Date.now() - start > 15000) { // timeout 15s
+        clearInterval(timer);
+        console.warn('CHAT not ready after 15s');
+      }
+    }, 200);
+  })();
+  </script>
+</body>
+</html>
+// ...existing code...
+</body>
+</html>

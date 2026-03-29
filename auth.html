@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Shop | Đăng nhập & Đăng ký</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Hiệu ứng riêng cho form trượt */
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      overflow: hidden;
+      width: 850px;
+      max-width: 95%;
+      min-height: 500px;
+      position: relative;
+      color: #fff;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      padding: 0 50px;
+      height: 100%;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .form-container {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      transition: all 0.6s ease-in-out;
+    }
+
+    .sign-in-container { left: 0; width: 50%; z-index: 2; }
+    .sign-up-container { left: 0; width: 50%; opacity: 0; z-index: 1; }
+
+    .container.right-panel-active .sign-up-container {
+      transform: translateX(100%);
+      opacity: 1;
+      z-index: 5;
+    }
+
+    .container.right-panel-active .sign-in-container {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    .overlay-container {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 50%;
+      height: 100%;
+      overflow: hidden;
+      transition: transform 0.6s ease-in-out;
+      z-index: 100;
+    }
+
+    .overlay {
+      background: linear-gradient(120deg, #2575fc, #6a11cb);
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      position: relative;
+      left: -100%;
+      height: 100%;
+      width: 200%;
+      transform: translateX(0);
+      transition: transform 0.6s ease-in-out;
+    }
+
+    .container.right-panel-active .overlay {
+      transform: translateX(50%);
+    }
+
+    .overlay-panel {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 40px;
+      text-align: center;
+      top: 0;
+      height: 100%;
+      width: 50%;
+      transform: translateX(0);
+      transition: transform 0.6s ease-in-out;
+    }
+
+    .overlay-left { transform: translateX(-20%); }
+    .container.right-panel-active .overlay-left { transform: translateX(0); }
+
+    .overlay-right { right: 0; transform: translateX(0); }
+    .container.right-panel-active .overlay-right { transform: translateX(20%); }
+
+    .ghost {
+      background: transparent;
+      border: 2px solid #fff;
+      color: #fff;
+      padding: 10px 30px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .ghost:hover {
+      background: #fff;
+      color: #2575fc;
+    }
+
+    #status_login, #status_signup {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .container { width: 95%; flex-direction: column; }
+      .overlay-container { display: none; }
+      .form-container { width: 100%; position: relative; opacity: 1 !important; transform: none !important; }
+    }
+  </style>
+</head>
+<body class="auth-body">
+  <div class="container" id="container">
+
+    <!-- Form Đăng ký -->
+    <div class="form-container sign-up-container">
+      <form id="signupForm">
+        <h2>📝 Đăng ký</h2>
+        <input type="text" id="fullname" placeholder="Họ và tên" required />
+        <input type="email" id="email_signup" placeholder="Email" required />
+        <input type="password" id="password_signup" placeholder="Mật khẩu" required />
+        <select id="role">
+          <option value="3">🛒 Người mua</option>
+          <option value="2">🏪 Người bán</option>
+        </select>
+        <button type="submit">Tạo tài khoản</button>
+        <p id="status_signup"></p>
+      </form>
+    </div>
+
+    <!-- Form Đăng nhập -->
+    <div class="form-container sign-in-container">
+      <form id="loginForm">
+        <h2>🔐 Đăng nhập</h2>
+        <input type="email" id="email_login" placeholder="Email" required />
+        <input type="password" id="password_login" placeholder="Mật khẩu" required />
+        <button type="submit">Đăng nhập</button>
+        <p id="status_login"></p>
+      </form>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay-container">
+      <div class="overlay">
+        <div class="overlay-panel overlay-left">
+          <h2>Chào mừng trở lại!</h2>
+          <p>Đăng nhập để tiếp tục trải nghiệm mua sắm tại E-Shop</p>
+          <button class="ghost" id="signIn">Đăng nhập</button>
+        </div>
+        <div class="overlay-panel overlay-right">
+          <h2>Xin chào!</h2>
+          <p>Tạo tài khoản mới để tham gia cùng E-Shop</p>
+          <button class="ghost" id="signUp">Đăng ký</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://qpnqsvueowqtqnzqdyqh.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...Pa0uSfs';
+    if (!window.supabase_client) {
+      window.supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      if (!window.sb) window.sb = window.supabase_client;
+    }
+    var supabase = window.supabase_client;
+
+    // Hiệu ứng chuyển panel
+    const signUpButton = document.getElementById('signUp');
+    const signInButton = document.getElementById('signIn');
+    const container = document.getElementById('container');
+    signUpButton.addEventListener('click', () => container.classList.add("right-panel-active"));
+    signInButton.addEventListener('click', () => container.classList.remove("right-panel-active"));
+
+    // 🧠 Đăng ký
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const full_name = document.getElementById('fullname').value.trim();
+      const email = document.getElementById('email_signup').value.trim();
+      const password = document.getElementById('password_signup').value.trim();
+      const role_id = parseInt(document.getElementById('role').value);
+      const status = document.getElementById('status_signup');
+      status.textContent = "⏳ Đang xử lý...";
+      status.style.color = "#eee";
+
+      const { data: existing } = await supabase.from('users').select('email').eq('email', email).maybeSingle();
+      if (existing) {
+        status.textContent = "⚠️ Email đã tồn tại!";
+        status.style.color = "orange";
+        return;
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .insert([{ full_name, email, password, username: email.split('@')[0], role_id, status: 'active' }]);
+
+      if (error) {
+        status.textContent = "❌ " + error.message;
+        status.style.color = "red";
+        return;
+      }
+
+      if (role_id === 2) {
+        const { data: newUser } = await supabase.from('users').select('user_id').eq('email', email).single();
+        if (newUser) {
+          await supabase.from('stores').insert([{ user_id: newUser.user_id, store_name: `Cửa hàng của ${full_name}`, description: "Cửa hàng mới", status: "active" }]);
+        }
+      }
+
+      status.textContent = "✅ Đăng ký thành công! Đang chuyển...";
+      status.style.color = "lime";
+      setTimeout(() => container.classList.remove("right-panel-active"), 1500);
+    });
+
+    // 🔑 Đăng nhập
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email_login').value.trim();
+      const password = document.getElementById('password_login').value.trim();
+      const status = document.getElementById('status_login');
+      status.textContent = "⏳ Đang đăng nhập...";
+      status.style.color = "#eee";
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('user_id, username, email, role_id, password')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (error || !data) {
+        status.textContent = "❌ Email hoặc mật khẩu sai!";
+        status.style.color = "red";
+        return;
+      }
+
+      localStorage.setItem('currentUser', JSON.stringify(data));
+      status.textContent = `✅ Xin chào ${data.username || data.email}!`;
+      status.style.color = "lime";
+      setTimeout(() => {
+        if (data.role_id === 1) window.location.href = "admin.html";
+        else if (data.role_id === 2) window.location.href = "seller.html";
+        else window.location.href = "index.html";
+      }, 1200);
+    });
+  </script>
+</body>
+</html>

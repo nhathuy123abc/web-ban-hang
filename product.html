@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chi tiết sản phẩm · E‑Shop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --brand:#48d1cc; /* teal */
+      --ink:#0a192f;  /* deep navy */
+      --ink-2:#112240;/* lighter navy */
+    }
+
+    /* App Frame */
+    body{background:#f6f8fb;}
+    .navbar{background:var(--ink)!important}
+    .navbar-brand{color:var(--brand)!important;font-weight:800;letter-spacing:.2px}
+    .navbar .nav-link{color:#c9d6e5!important}
+
+    /* Page head */
+    .page-head{background:linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%)}
+    .crumb a{color:#6c8ab5;text-decoration:none}
+    .crumb a:hover{text-decoration:underline}
+
+    /* Card/Panel polish */
+    .panel{background:#fff;border:1px solid rgba(10,25,47,.06);box-shadow:0 6px 18px rgba(16,24,40,.07);border-radius:14px}
+    .panel-soft{background:linear-gradient(180deg,#ffffff, #fbfdff)}
+
+    /* Product visuals */
+    .product-hero{position:relative}
+    .product-img{width:100%;height:520px;object-fit:cover;border-radius:12px}
+    .thumb{width:82px;height:82px;border-radius:10px;object-fit:cover;border:2px solid transparent;cursor:pointer}
+    .thumb.active{border-color:var(--brand)}
+    .badge-stock{background:#e8f6f5;color:#0b6b66;border:1px solid #bfe9e6}
+    .price-tag{font-size:clamp(24px,3vw,36px);color:var(--brand);font-weight:900}
+
+    /* Stars */
+    .star{color:#ffb703}
+
+    /* CTA group */
+    .sticky-cta{position:sticky;top:16px}
+    .btn-primary{background:var(--brand);border-color:var(--brand)}
+    .btn-primary:hover{background:#3aa8a5;border-color:#3aa8a5}
+
+    /* Review block */
+    .review{border-bottom:1px dashed #e7eef6}
+
+    /* Skeletons */
+    .skeleton{position:relative;overflow:hidden;background:#e9eef5}
+    .skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+      animation:shimmer 1.4s infinite}
+    @keyframes shimmer{100%{transform:translateX(100%)}}
+
+    /* Utilities */
+    .text-teal{color:var(--brand)!important}
+    .muted{color:#7b8aa0}
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="navbar navbar-expand-lg unified-navbar px-4">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <i class="fas fa-shopping-cart"></i>
+        E-Shop
+      </a>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto" id="nav-menu"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page head / breadcrumb -->
+  <header class="page-head border-bottom py-3">
+    <div class="container">
+      <nav class="crumb small" aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="index.html">Trang chủ</a></li>
+          <li class="breadcrumb-item"><a href="shop.html" id="crumb-shop">Cửa hàng</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Chi tiết</li>
+        </ol>
+      </nav>
+    </div>
+  </header>
+
+  <div id="toastArea" class="position-fixed top-0 end-0 p-3" style="z-index:1080"></div>
+
+  <!-- CONTENT -->
+  <main class="container my-4" id="app">
+    <!-- Product block -->
+    <section class="panel panel-soft p-4" id="content">
+      <!-- skeleton while loading -->
+      <div class="row g-4" id="skeleton">
+        <div class="col-md-6">
+          <div class="skeleton rounded-3" style="height:520px"></div>
+          <div class="d-flex gap-2 mt-3">
+            <div class="skeleton rounded-3" style="width:82px;height:82px"></div>
+            <div class="skeleton rounded-3" style="width:82px;height:82px"></div>
+            <div class="skeleton rounded-3" style="width:82px;height:82px"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="skeleton rounded-3 mb-3" style="height:44px;width:80%"></div>
+          <div class="skeleton rounded-3 mb-4" style="height:38px;width:50%"></div>
+          <div class="skeleton rounded-3 mb-3" style="height:18px;width:60%"></div>
+          <div class="skeleton rounded-3 mb-3" style="height:18px;width:70%"></div>
+          <div class="skeleton rounded-3 mb-4" style="height:100px"></div>
+          <div class="skeleton rounded-3" style="height:44px;width:60%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reviews -->
+    <section class="mt-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="mb-0">⭐ Đánh giá Khách hàng</h5>
+        <small id="avgScore" class="muted"></small>
+      </div>
+      <div id="reviewList" class="mb-3 small p-3 bg-white rounded panel"></div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="card-title">Gửi đánh giá của bạn</h6>
+          <div class="row g-2 align-items-center">
+            <div class="col-md-2">
+              <label class="visually-hidden" for="rating">Chọn số sao</label>
+              <select id="rating" class="form-select">
+                <option value="5">5 ★ Tuyệt vời</option>
+                <option value="4">4 ★ Rất tốt</option>
+                <option value="3">3 ★ Tốt</option>
+                <option value="2">2 ★ Tạm được</option>
+                <option value="1">1 ★ Kém</option>
+              </select>
+            </div>
+            <div class="col-md-8">
+              <label class="visually-hidden" for="rvContent">Nội dung đánh giá</label>
+              <input id="rvContent" class="form-control" maxlength="280" placeholder="Chia sẻ cảm nhận của bạn (tối đa 280 ký tự)..." />
+            </div>
+            <div class="col-md-2 d-grid">
+              <button id="btnReview" class="btn btn-primary">
+                <i class="fa fa-paper-plane me-2"></i>Gửi đánh giá
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  
+
+  <script src="buyer.js"></script>
+  <script src="components.js"></script>
+  <script>renderHeader && renderHeader('home');</script>
+
+  <script>
+    // ===== Helpers =====
+    const fmtVND = (n)=> (window.VND ? VND(n) : new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n||0));
+    const toastArea = document.getElementById('toastArea');
+    function showToast(msg, type='success'){ const id = 't'+Date.now();
+      toastArea.insertAdjacentHTML('beforeend',`<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="status" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex"><div class="toast-body">${msg}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Đóng"></button></div></div>`);
+      const el = new bootstrap.Toast(document.getElementById(id),{delay:2600}); el.show();}
+
+    // ===== Page boot =====
+    (async function(){
+      const q = new URLSearchParams(location.search); const pid = Number(q.get('id'));
+      const content = document.getElementById('content');
+      const skeleton = document.getElementById('skeleton');
+      if(!pid){ skeleton.remove(); content.innerHTML = `<div class="text-danger">Thiếu product id</div>`; return; }
+
+      // fetch product
+      const r = await sb.from('products').select('*').eq('product_id', pid).maybeSingle();
+      if(!r.data){ skeleton.remove(); content.innerHTML = `<div class="text-danger">Không tìm thấy sản phẩm</div>`; return; }
+      const p = r.data;
+
+      // shop info
+      const store = await sb.from('stores').select('*').eq('store_id', p.store_id).maybeSingle();
+      const shopName = store.data?.store_name || ('Shop #'+p.store_id);
+      
+      const storeOwnerId = store.data?.user_id;
+      window.currentChatTarget = {
+  type: "store",
+  storeOwnerId: storeOwnerId,
+  storeId: p.store_id,
+  productId: p.product_id,
+  storeName: shopName
+};
+
+      const canReply = window.me && window.me.role_id === 2 && storeOwnerId && window.me.user_id === storeOwnerId;
+      document.getElementById('crumb-shop').href = `shop.html?id=${p.store_id}`;
+
+      // wishlist state
+      const wish = (window.me ? await getWishes() : []) || [];
+      const isFav = wish.includes(p.product_id);
+
+      // build gallery
+      const imgs = [p.image_url, p.image_2, p.image_3, p.image_4].filter(Boolean);
+      const mainImg = imgs[0] || 'https://via.placeholder.com/1000x700?text=No+Image';
+
+      const stockBadge = p.stock>0
+        ? `<span class="badge badge-stock rounded-pill px-3 py-2"><i class="fa fa-check me-1"></i>Còn ${p.stock} sản phẩm</span>`
+        : `<span class="badge text-bg-danger rounded-pill px-3 py-2"><i class="fa fa-ban me-1"></i>Hết hàng</span>`
+
+      // render content
+      content.innerHTML = `
+        <div class="row g-4 align-items-start">
+          <div class="col-lg-6">
+            <div class="product-hero">
+              <img id="img-main" class="product-img" src="${mainImg}" alt="${p.product_name}"/>
+              <div class="d-flex flex-wrap gap-2 mt-3" id="thumbs">
+                ${imgs.map((src,i)=>`<img class="thumb ${i===0?'active':''}" src="${src}" alt="thumb ${i+1}" data-src="${src}"/>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="sticky-cta">
+              <h1 class="h3 fw-bold mb-2">${p.product_name}</h1>
+              <div class="d-flex align-items-center gap-2 mb-3">
+                ${stockBadge}
+                <a class="text-decoration-none muted" href="shop.html?id=${p.store_id}"><i class="fa fa-store me-1"></i>${shopName}</a>
+              </div>
+              <div class="price-tag mb-3">${fmtVND(p.price)}</div>
+
+              <div class="mb-4">
+                <h6 class="mb-2">Mô tả sản phẩm</h6>
+                <p class="text-muted mb-0">${p.description || 'Chưa có mô tả chi tiết.'}</p>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-primary btn-lg" id="btnAdd"><i class="fa fa-cart-plus me-2"></i>Thêm vào giỏ</button>
+                <button class="btn ${isFav?'btn-danger':'btn-outline-danger'} btn-lg" id="btnWish">
+                  <i class="fa fa-heart me-2"></i>${isFav?'Bỏ yêu thích':'Yêu thích'}</button>
+                <a class="btn btn-outline-secondary btn-lg" href="tel:+849999999"> <i class="fa fa-phone me-2"></i>Gọi tư vấn</a>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      // thumbs switch
+      const imgMain = document.getElementById('img-main');
+      content.querySelectorAll('.thumb').forEach(t=>{
+        t.addEventListener('click',()=>{
+          imgMain.src = t.dataset.src;
+          content.querySelectorAll('.thumb').forEach(x=>x.classList.remove('active'));
+          t.classList.add('active');
+        })
+      })
+
+      // actions
+      document.getElementById('btnAdd').onclick = async ()=>{
+        await addToCart(p.product_id, 1);
+        showToast('Đã thêm vào giỏ hàng');
+      }
+      document.getElementById('btnWish').onclick = async (e)=>{
+        await toggleWish(p.product_id);
+        showToast('Cập nhật danh sách yêu thích');
+        location.reload();
+      }
+
+      // load reviews
+      const rev = await fetchReviews(pid);
+      const list = document.getElementById('reviewList');
+      const avg = rev.length ? (rev.reduce((a,b)=>a + (Number(b.rating)||0),0)/rev.length) : 0;
+      document.getElementById('avgScore').textContent = rev.length
+        ? `${avg.toFixed(1)} / 5 · ${rev.length} đánh giá`
+        : 'Chưa có đánh giá';
+
+      // nếu đã đăng nhập và từng đánh giá, auto fill form để chỉnh sửa
+      if(window.me){
+        const myReview = rev.find(r => r.buyer_id === window.me.user_id);
+        if(myReview){
+          const ratingEl = document.getElementById('rating');
+          const contentEl = document.getElementById('rvContent');
+          if(ratingEl) ratingEl.value = myReview.rating || 5;
+          if(contentEl) contentEl.value = myReview.comment || '';
+          const titleEl = document.querySelector('.card-title');
+          if(titleEl) titleEl.textContent = 'Chỉnh sửa đánh giá của bạn';
+          const btnEl = document.getElementById('btnReview');
+          if(btnEl) btnEl.innerHTML = '<i class="fa fa-save me-2"></i>Cập nhật đánh giá';
+        }
+      }
+
+      list.innerHTML = rev.length
+  ? rev.map(rv=>{
+      const stars = '★'.repeat(rv.rating||0) + '☆'.repeat(5-(rv.rating||0));
+      const created = new Date(rv.created_at).toLocaleString('vi-VN');
+      const repliedAt = rv.seller_replied_at
+        ? new Date(rv.seller_replied_at).toLocaleString('vi-VN')
+        : '';
+
+      const replyBlock = rv.seller_reply ? `
+        <div class="mt-2 ps-3 border-start small">
+          <div class="text-muted mb-1">
+            Phản hồi từ người bán${repliedAt ? ' · ' + repliedAt : ''}
+          </div>
+          <div>${rv.seller_reply}</div>
+        </div>
+      ` : '';
+
+      const replyForm = canReply ? `
+        <div class="mt-2 ps-3 border-start">
+          <textarea class="form-control form-control-sm mb-1"
+                    id="reply-${rv.review_id}"
+                    rows="1"
+                    placeholder="Phản hồi khách hàng...">${rv.seller_reply || ''}</textarea>
+          <button class="btn btn-sm btn-outline-primary"
+                  onclick="submitReply(${rv.review_id})">
+            ${rv.seller_reply ? 'Cập nhật phản hồi' : 'Gửi phản hồi'}
+          </button>
+        </div>
+      ` : '';
+
+      // 👉 Chỉ hiện cho review của chính người đang đăng nhập
+      const isMine = window.me && rv.buyer_id === window.me.user_id;
+      const selfActions = isMine ? `
+        <div class="mt-1 small">
+         
+          <button class="btn btn-link btn-sm text-danger p-0"
+                  data-role="delete-review"
+                  data-id="${rv.review_id}">
+            <i class="fa fa-trash me-1"></i>Xóa
+          </button>
+        </div>
+      ` : '';
+
+      return `
+        <div class='review py-2 border-bottom'>
+          <div class='d-flex align-items-center gap-2'>
+            <span class='text-warning'>${stars}</span>
+            <span class='muted small'>${created}</span>
+          </div>
+          <div>${rv.comment || 'Không có nội dung'}</div>
+          ${selfActions}
+          ${replyBlock}
+          ${replyForm}
+        </div>
+      `;
+    }).join('')
+  : '<div class="text-muted">Chưa có đánh giá. Hãy là người đầu tiên!</div>';
+// Gắn click cho nút chỉnh sửa / xóa đánh giá của chính mình
+list.querySelectorAll('[data-role="edit-review"]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const ratingEl  = document.getElementById('rating');
+    const contentEl = document.getElementById('rvContent');
+    if(!ratingEl || !contentEl) return;
+
+    const r  = btn.dataset.rating || 5;
+    const cm = btn.dataset.comment || '';
+
+    ratingEl.value   = r;
+    contentEl.value  = cm;
+
+    const titleEl = document.querySelector('.card-title');
+    if(titleEl) titleEl.textContent = 'Chỉnh sửa đánh giá của bạn';
+
+    const b = document.getElementById('btnReview');
+    if(b) b.innerHTML = '<i class="fa fa-save me-2"></i>Cập nhật đánh giá';
+
+    // Cuộn tới form
+    document.getElementById('btnReview')?.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+});
+
+list.querySelectorAll('[data-role="delete-review"]').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    const id = Number(btn.dataset.id);
+    if(!id) return;
+    if(!window.me){
+      showToast('Vui lòng đăng nhập để xóa đánh giá', 'danger');
+      return;
+    }
+    if(!confirm('Bạn chắc chắn muốn xóa đánh giá này?')) return;
+
+    // Xóa review chính mình (thêm điều kiện buyer_id cho an toàn)
+    const { error } = await sb
+      .from('reviews')
+      .delete()
+      .eq('review_id', id)
+      .eq('buyer_id', window.me.user_id);
+
+    if(error){
+      console.error(error);
+      showToast('Không thể xóa đánh giá: ' + (error.message || ''), 'danger');
+      return;
+    }
+
+    showToast('Đã xóa đánh giá của bạn');
+    location.reload();
+  });
+});
+
+const btnReview = document.getElementById('btnReview');
+      if(btnReview){ btnReview.onclick = async ()=>{
+        const rating = document.getElementById('rating').value;
+        const content = document.getElementById('rvContent').value.trim();
+        await createReview(pid, rating, content);
+        showToast('Đã gửi đánh giá, cảm ơn bạn!');
+        location.reload();
+      }}
+
+      // người bán phản hồi đánh giá ngay dưới mỗi comment
+      window.submitReply = async function(reviewId){
+        const input = document.getElementById('reply-' + reviewId);
+        if(!input) return;
+        const text = (input.value || '').trim();
+        await replyReview(reviewId, text);
+        location.reload();
+      }
+
+      // remove skeleton
+      skeleton?.remove();
+    })();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="chat-loader.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,743 @@
+/* =====================================================
+   THEME CSS - STYLE THỐNG NHẤT CHO TẤT CẢ TRANG
+   ===================================================== */
+
+/* ===============================
+   1. COLOR VARIABLES
+================================= */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #0f172a;
+  --accent: #06b6d4;
+  --light-bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text-dark: #1e293b;
+  --text-light: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius: 12px;
+}
+
+/* ===============================
+   2. GLOBAL STYLES
+================================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--light-bg);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--text-dark);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ===============================
+   3. HEADER & NAVBAR
+================================= */
+.unified-navbar {
+  background: linear-gradient(90deg, #1e1e2d 0%, #2d3748 100%) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem 0 !important;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.unified-navbar .navbar-brand {
+  color: #4cc9f0 !important;
+  font-weight: 700;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.unified-navbar .navbar-brand:hover {
+  color: #4895ef !important;
+}
+
+.unified-navbar .nav-link {
+  color: #cbd5e1 !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.unified-navbar .nav-link:hover {
+  color: #4cc9f0 !important;
+  background-color: rgba(76, 201, 240, 0.1);
+}
+
+.unified-navbar .nav-link.active {
+  color: #4cc9f0 !important;
+  background-color: rgba(76, 201, 240, 0.15);
+}
+
+.unified-navbar .navbar-text {
+  color: #cbd5e1 !important;
+  font-size: 0.95rem;
+}
+
+.unified-navbar .navbar-text a {
+  color: #4cc9f0 !important;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.unified-navbar .navbar-text a:hover {
+  color: #4895ef !important;
+}
+
+.unified-navbar .navbar-toggler {
+  border-color: rgba(76, 201, 240, 0.3) !important;
+}
+
+.unified-navbar .navbar-toggler:focus {
+  box-shadow: 0 0 0 0.25rem rgba(76, 201, 240, 0.25) !important;
+}
+
+/* ===============================
+   4. TYPOGRAPHY
+================================= */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+p {
+  color: var(--text-light);
+  margin-bottom: 1rem;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ===============================
+   5. CARDS & PANELS
+================================= */
+.card {
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+
+.card-header {
+  background: var(--light-bg);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  padding: 1.25rem;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.panel {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+}
+
+/* ===============================
+   6. BUTTONS
+================================= */
+.btn {
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.625rem 1.25rem;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--text-light);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: var(--text-dark);
+  transform: translateY(-2px);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-outline-primary {
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-outline-secondary {
+  border: 1px solid var(--border);
+  color: var(--text-dark);
+}
+
+.btn-outline-secondary:hover {
+  background: var(--light-bg);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ===============================
+   7. FORMS
+================================= */
+.form-control,
+.form-select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.625rem 0.875rem;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+.form-label {
+  color: var(--text-dark);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.input-group-text {
+  background: var(--light-bg);
+  border: 1px solid var(--border);
+  color: var(--text-light);
+}
+
+/* ===============================
+   8. BADGES & LABELS
+================================= */
+.badge {
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.badge-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.badge-success {
+  background: var(--success);
+  color: white;
+}
+
+.badge-warning {
+  background: var(--warning);
+  color: white;
+}
+
+.badge-danger {
+  background: var(--danger);
+  color: white;
+}
+
+/* ===============================
+   9. TABLES
+================================= */
+.table {
+  color: var(--text-dark);
+  border-color: var(--border);
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.table thead {
+  background: var(--light-bg);
+  border-bottom: 2px solid var(--border);
+}
+
+.table thead th {
+  color: var(--text-dark);
+  font-weight: 600;
+  padding: 0.625rem 0.65rem;
+  vertical-align: middle;
+  font-size: 0.8rem;
+}
+
+.table tbody td {
+  padding: 0.625rem 0.65rem;
+  vertical-align: middle;
+  border-color: var(--border);
+}
+
+.table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.03);
+}
+
+/* ===============================
+   10. ALERTS & MODALS
+================================= */
+.alert {
+  border: none;
+  border-radius: var(--radius);
+  border-left: 4px solid;
+}
+
+.alert-primary {
+  background: #dbeafe;
+  border-left-color: var(--primary);
+  color: #1e40af;
+}
+
+.alert-success {
+  background: #dcfce7;
+  border-left-color: var(--success);
+  color: #166534;
+}
+
+.alert-warning {
+  background: #fef3c7;
+  border-left-color: var(--warning);
+  color: #92400e;
+}
+
+.alert-danger {
+  background: #fee2e2;
+  border-left-color: var(--danger);
+  color: #991b1b;
+}
+
+.modal-header {
+  background: var(--light-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.modal-content {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* ===============================
+   11. PAGINATION
+================================= */
+.pagination {
+  gap: 0.5rem;
+}
+
+.page-link {
+  color: var(--primary);
+  border-color: var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.page-link:hover {
+  color: white;
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.page-link.active {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.page-link:disabled {
+  color: var(--text-light);
+  background: var(--light-bg);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+
+/* ===============================
+   12. SPACING UTILITIES
+================================= */
+.container {
+  max-width: 1200px;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Padding utilities */
+.p-xs { padding: 0.5rem; }
+.p-sm { padding: 1rem; }
+.p-md { padding: 1.5rem; }
+.p-lg { padding: 2rem; }
+.p-xl { padding: 3rem; }
+
+.px-xs { padding-left: 0.5rem; padding-right: 0.5rem; }
+.px-sm { padding-left: 1rem; padding-right: 1rem; }
+.px-md { padding-left: 1.5rem; padding-right: 1.5rem; }
+
+.py-xs { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-sm { padding-top: 1rem; padding-bottom: 1rem; }
+.py-md { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+
+/* Margin utilities */
+.m-xs { margin: 0.5rem; }
+.m-sm { margin: 1rem; }
+.m-md { margin: 1.5rem; }
+.m-lg { margin: 2rem; }
+
+.mx-auto { margin-left: auto; margin-right: auto; }
+.my-auto { margin-top: auto; margin-bottom: auto; }
+
+/* ===============================
+   13. FLEX UTILITIES
+================================= */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-column-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===============================
+   14. TEXT UTILITIES
+================================= */
+.text-primary { color: var(--primary) !important; }
+.text-secondary { color: var(--secondary) !important; }
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-muted { color: var(--text-light) !important; }
+.text-dark { color: var(--text-dark) !important; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-uppercase { text-transform: uppercase; }
+.text-lowercase { text-transform: lowercase; }
+.text-capitalize { text-transform: capitalize; }
+
+.fw-normal { font-weight: 400; }
+.fw-medium { font-weight: 500; }
+.fw-semibold { font-weight: 600; }
+.fw-bold { font-weight: 700; }
+
+/* ===============================
+   15. BORDERS & DIVIDERS
+================================= */
+.border {
+  border: 1px solid var(--border) !important;
+}
+
+.border-top {
+  border-top: 1px solid var(--border) !important;
+}
+
+.border-bottom {
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.border-left {
+  border-left: 1px solid var(--border) !important;
+}
+
+.border-right {
+  border-right: 1px solid var(--border) !important;
+}
+
+.border-primary {
+  border-color: var(--primary) !important;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+/* ===============================
+   16. SHADOWS
+================================= */
+.shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.shadow {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.shadow-none {
+  box-shadow: none !important;
+}
+
+/* ===============================
+   17. BACKGROUND UTILITIES
+================================= */
+.bg-light {
+  background: var(--light-bg) !important;
+}
+
+.bg-white {
+  background: var(--card-bg) !important;
+}
+
+.bg-primary {
+  background: var(--primary) !important;
+  color: white;
+}
+
+.bg-success {
+  background: var(--success) !important;
+  color: white;
+}
+
+.bg-danger {
+  background: var(--danger) !important;
+  color: white;
+}
+
+/* ===============================
+   18. LOADING & ANIMATIONS
+================================= */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(37, 99, 235, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===============================
+   19. RESPONSIVE DESIGN
+================================= */
+@media (max-width: 1200px) {
+  .container {
+    max-width: 960px;
+  }
+}
+
+@media (max-width: 992px) {
+  .container {
+    max-width: 720px;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody tr {
+    display: block;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .table tbody td {
+    display: block;
+    padding-left: 50%;
+    position: relative;
+    border: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table tbody td:last-child {
+    border-bottom: none;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+}
+
+@media (max-width: 768px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  
+  .container {
+    max-width: 540px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .p-md { padding: 1rem; }
+  .py-md { padding-top: 1rem; padding-bottom: 1rem; }
+}
+
+@media (max-width: 576px) {
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+
+  .container {
+    max-width: 100%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+}
+
+/* ===============================
+   20. UTILITY CLASSES
+================================= */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+.d-flex { display: flex !important; }
+
+.opacity-50 { opacity: 0.5; }
+.opacity-75 { opacity: 0.75; }
+.opacity-100 { opacity: 1; }
+
+.rounded { border-radius: var(--radius); }
+.rounded-top { border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); }
+.rounded-bottom { border-bottom-left-radius: var(--radius); border-bottom-right-radius: var(--radius); }
+.rounded-circle { border-radius: 50%; }
+
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+
+.cursor-pointer { cursor: pointer; }
+.cursor-not-allowed { cursor: not-allowed; }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

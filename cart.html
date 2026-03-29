@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Giỏ hàng - E-Shop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Nâng cấp Style */
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary-color: #64748b;
+      --success-color: #10b981;
+      --light-bg: #f8fafc;
+      --border-color: #e2e8f0;
+      --text-dark: #1e293b;
+      --text-light: #64748b;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    body {
+      background-color: var(--light-bg);
+      color: var(--text-dark);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    
+    .navbar {
+      /* Navbar mới sẽ dùng unified-navbar từ style.css */
+    }
+    
+    .navbar-brand {
+      /* Đã được định nghĩa trong unified-navbar */
+    }
+    
+    .product-img {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      transition: transform 0.2s;
+    }
+    
+    .product-img:hover {
+      transform: scale(1.03);
+    }
+    
+    .text-primary {
+      color: var(--primary-color) !important;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+      font-weight: 600;
+      padding: 10px 20px;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    
+    .btn-outline-primary {
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .btn-outline-primary:hover {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .btn-outline-danger:hover {
+      transform: translateY(-1px);
+    }
+    
+    .cart-summary .d-flex {
+      padding: 8px 0;
+    }
+    
+    .card {
+      border: none;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .table {
+      margin-bottom: 0;
+    }
+    
+    .table thead th {
+      background-color: var(--light-bg);
+      border-bottom: 2px solid var(--border-color);
+      font-weight: 600;
+      color: var(--text-dark);
+      padding: 16px 12px;
+    }
+    
+    .table tbody td {
+      padding: 16px 12px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .table tbody tr:hover {
+      background-color: rgba(37, 99, 235, 0.03);
+    }
+    
+    .form-control {
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      padding: 10px 12px;
+      transition: all 0.2s;
+    }
+    
+    .form-control:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    .quantity-input {
+      width: 80px;
+      text-align: center;
+    }
+    
+    .empty-cart {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-light);
+    }
+    
+    .empty-cart i {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      color: #cbd5e1;
+    }
+    
+    .cart-item-title {
+      font-weight: 600;
+      color: var(--text-dark);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .cart-item-title:hover {
+      color: var(--primary-color);
+    }
+    
+    .store-name {
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+    
+    .price-highlight {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    
+    .discount-badge {
+      background-color: #fef3c7;
+      color: #92400e;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .summary-card {
+      position: sticky;
+      top: 20px;
+    }
+    
+    .checkout-btn {
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .coupon-success {
+      color: var(--success-color);
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-top: 8px;
+    }
+    
+    .cart-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .cart-count-badge {
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    
+    .continue-shopping {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      margin-top: 16px;
+      transition: all 0.2s;
+    }
+    
+    .continue-shopping:hover {
+      gap: 10px;
+      color: var(--primary-hover);
+    }
+    
+    @media (max-width: 768px) {
+      .product-img {
+        width: 70px;
+        height: 70px;
+      }
+      
+      .table thead {
+        display: none;
+      }
+      
+      .table tbody tr {
+        display: block;
+        margin-bottom: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      
+      .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-color);
+      }
+      
+      .table tbody td:last-child {
+        border-bottom: none;
+      }
+      
+      .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-dark);
+      }
+      
+      .cart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg unified-navbar px-4">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">
+      <i class="fas fa-shopping-cart"></i>
+      E-Shop
+    </a>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto" id="nav-menu">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">Trang chủ</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="orders.html">Đơn của tôi</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="wishlist.html">Yêu thích</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="spin.html">Vòng quay</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="profile.html">👋 buyer5</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="cart.html">🛒 Giỏ <span class="badge bg-danger">0</span></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="logout.html">Đăng xuất</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container my-5">
+  <div class="cart-header">
+    <h3 class="mb-0">Giỏ hàng của tôi</h3>
+    <div class="cart-count-badge d-none" id="cartCount">0</div>
+  </div>
+  
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th>Giá</th>
+                  <th style="width:120px">Số lượng</th>
+                  <th class="text-end">Thành tiền</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cartBody">
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-5">
+                    <div class="loading-spinner me-2"></div>
+                    Đang tải giỏ hàng...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <a href="index.html" class="continue-shopping">
+        <i class="fas fa-arrow-left"></i>
+        Tiếp tục mua sắm
+      </a>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card summary-card shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Tóm tắt đơn hàng</h5>
+          
+          <div class="mb-3 border-bottom pb-3">
+            <div class="mb-2 fw-semibold">Mã giảm giá</div>
+            <div class="input-group">
+              <input id="coupon" class="form-control" placeholder="Nhập mã giảm giá">
+              <button id="applyCoupon" class="btn btn-outline-primary">
+                <i class="fa fa-tag me-1"></i> Áp dụng
+              </button>
+            </div>
+            <div id="couponMessage" class="coupon-success d-none"></div>
+          </div>
+          
+          <div class="cart-summary">
+            <div class="d-flex justify-content-between mb-2">
+              <div>Tạm tính</div>
+              <div id="sub" class="fw-semibold">0 ₫</div>
+            </div>
+            <div class="d-flex justify-content-between text-success mb-2">
+              <div>Giảm giá</div>
+              <div id="disc" class="fw-semibold">- 0 ₫</div>
+            </div>
+            <div class="d-flex justify-content-between small text-muted mb-2">
+              <div>Phí vận chuyển</div>
+              <div>Miễn phí</div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="d-flex justify-content-between h4 text-primary mb-4">
+            <div>Tổng cộng</div>
+            <div id="grand" class="fw-bold">0 ₫</div>
+          </div>
+          
+          <button id="checkout" class="btn btn-primary checkout-btn">
+            <i class="fa fa-credit-card me-2"></i> 
+            Thanh toán VNPay
+          </button>
+          
+          <div class="mt-3 text-center small text-muted">
+            <i class="fas fa-lock me-1"></i>
+            Thanh toán an toàn & bảo mật
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://qpnqsvueowqtqnzqdyqh.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwbnFzdnVlb3dxdHFuenFkeXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5ODg1NDMsImV4cCI6MjA3NTU2NDU0M30.dtNEnYlLLa9mTP9Oi6uvS7PkQ2IoH6SMhXemPa0uSfs';
+if (!window.supabase_client) {
+  window.supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  if (!window.sb) window.sb = window.supabase_client;
+}
+var supabase = window.supabase_client;
+const VND = v=>Number(v||0).toLocaleString('vi-VN')+' ₫';
+
+const me = JSON.parse(localStorage.getItem('currentUser')||'null');
+let cartRows=[], prodMap=new Map(), couponPct=0;
+
+// Load cart + products
+(async function init(){
+  if(!me){ 
+    document.getElementById('cartBody').innerHTML=`
+      <tr>
+        <td colspan="6" class="empty-cart">
+          <i class="fas fa-shopping-cart"></i>
+          <h5 class="mb-3">Vui lòng đăng nhập để xem giỏ hàng</h5>
+          <a href="login.html" class="btn btn-primary">Đăng nhập ngay</a>
+        </td>
+      </tr>
+    `; 
+    return; 
+  }
+
+  // cart_items: chỉ lấy user_id, product_id, quantity
+  const r = await supabase.from('cart_items')
+    .select('user_id, product_id, quantity')
+    .eq('user_id', me.user_id);
+  if(r.error){ 
+    document.getElementById('cartBody').innerHTML=`
+      <tr>
+        <td colspan="6" class="text-center text-danger py-5">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          ${r.error.message}
+        </td>
+      </tr>
+    `; 
+    return; 
+  }
+  cartRows = r.data||[];
+
+  if(!cartRows.length){
+    document.getElementById('cartBody').innerHTML=`
+      <tr>
+        <td colspan="6" class="empty-cart">
+          <i class="fas fa-shopping-cart"></i>
+          <h5 class="mb-3">Giỏ hàng của bạn đang trống</h5>
+          <p class="text-muted mb-4">Hãy thêm một số sản phẩm vào giỏ hàng!</p>
+          <a href="index.html" class="btn btn-primary">Mua sắm ngay</a>
+        </td>
+      </tr>
+    `; 
+    recalc(); 
+    return;
+  }
+
+  const ids=[...new Set(cartRows.map(x=>x.product_id))];
+  const pr=await supabase.from('products')
+    .select('product_id, product_name, price, image_url, store_id')
+    .in('product_id', ids);
+  if(pr.error){ 
+    document.getElementById('cartBody').innerHTML=`
+      <tr>
+        <td colspan="6" class="text-center text-danger py-5">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          ${pr.error.message}
+        </td>
+      </tr>
+    `; 
+    return; 
+  }
+  (pr.data||[]).forEach(p=>prodMap.set(p.product_id,p));
+
+  render(); 
+  recalc();
+})();
+
+function render(){
+  const tb=document.getElementById('cartBody');
+  const cartCount = document.getElementById('cartCount');
+  
+  // Update cart count badge
+  if (cartCount) {
+    cartCount.textContent = cartRows.length;
+    cartCount.classList.remove('d-none');
+  }
+  
+  tb.innerHTML = cartRows.map(ci=>{
+    const p=prodMap.get(ci.product_id)||{};
+    const unit=Number(p.price||0);
+    const sum=unit*Number(ci.quantity||0);
+    
+    // For mobile view, we'll use data attributes
+    return `<tr>
+      <td data-label="Sản phẩm">
+        <div class="d-flex align-items-center">
+          <img class="product-img me-3" src="${p.image_url||'https://via.placeholder.com/80'}" alt="${p.product_name||'Sản phẩm'}">
+          <div>
+            <a href="product.html?id=${ci.product_id}" class="cart-item-title">${p.product_name||('SP #'+ci.product_id)}</a>
+            <div class="store-name">Shop #${p.store_id||'-'}</div>
+          </div>
+        </div>
+      </td>
+      <td data-label="Giá" class="fw-semibold">${VND(unit)}</td>
+      <td data-label="Số lượng">
+        <input type="number" min="1" value="${ci.quantity}" class="form-control form-control-sm quantity-input" onchange="updateQty(${ci.product_id}, this.value)">
+      </td>
+      <td data-label="Thành tiền" class="text-end price-highlight">${VND(sum)}</td>
+      <td data-label="">
+        <button class="btn btn-sm btn-outline-danger" onclick="removeItem(${ci.product_id})" title="Xóa sản phẩm">
+          <i class="fa fa-trash"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function recalc(){
+  const subtotal = cartRows.reduce((s,ci)=>{
+    const p=prodMap.get(ci.product_id)||{};
+    const unit=Number(p.price||0);
+    return s + unit*Number(ci.quantity||0);
+  },0);
+  const disc = Math.round(subtotal*couponPct/100);
+  document.getElementById('sub').textContent=VND(subtotal);
+  document.getElementById('disc').textContent=`- ${VND(disc)}`;
+  document.getElementById('grand').textContent=VND(Math.max(0,subtotal-disc));
+}
+
+// Update quantity theo khóa (user_id, product_id)
+window.updateQty = async (pid, val)=>{
+  const qty=Math.max(1, Number(val||1));
+  const { error } = await supabase.from('cart_items')
+    .update({ quantity: qty })
+    .eq('user_id', me.user_id)
+    .eq('product_id', pid);
+  if(error){ 
+    alert('Lỗi cập nhật: '+error.message); 
+    return; 
+  }
+  cartRows = cartRows.map(r=> r.product_id===pid ? {...r, quantity: qty} : r);
+  render(); 
+  recalc();
+};
+
+// Remove theo khóa (user_id, product_id)
+window.removeItem = async (pid)=>{
+  if(!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) return;
+  
+  const { error } = await supabase.from('cart_items')
+    .delete()
+    .eq('user_id', me.user_id)
+    .eq('product_id', pid);
+  if(error){ 
+    alert('Lỗi xóa: '+error.message); 
+    return; 
+  }
+  cartRows = cartRows.filter(r=> r.product_id!==pid);
+  render(); 
+  recalc();
+  if(!cartRows.length) {
+    document.getElementById('cartBody').innerHTML=`
+      <tr>
+        <td colspan="6" class="empty-cart">
+          <i class="fas fa-shopping-cart"></i>
+          <h5 class="mb-3">Giỏ hàng của bạn đang trống</h5>
+          <p class="text-muted mb-4">Hãy thêm một số sản phẩm vào giỏ hàng!</p>
+          <a href="index.html" class="btn btn-primary">Mua sắm ngay</a>
+        </td>
+      </tr>
+    `;
+    document.getElementById('cartCount').classList.add('d-none');
+  }
+};
+
+let appliedUserVoucherId = null; // store the user_voucher_id when applying
+document.getElementById('applyCoupon').onclick=async ()=>{
+  const code=(document.getElementById('coupon').value||'').trim();
+  const couponMessage = document.getElementById('couponMessage');
+  couponMessage.classList.remove('text-success','text-danger');
+  couponMessage.classList.add('d-none');
+
+  if(!code){ couponMessage.textContent = 'Nhập mã giảm giá'; couponMessage.classList.remove('d-none'); couponMessage.classList.add('text-danger'); return; }
+  // 1) find voucher by code
+  const vq = await supabase.from('vouchers').select('*').ilike('voucher_code', code).maybeSingle();
+  if(vq.error || !vq.data){ couponPct = 0; couponMessage.textContent = 'Mã giảm giá không hợp lệ'; couponMessage.classList.remove('d-none'); couponMessage.classList.add('text-danger'); recalc(); return; }
+  const voucher = vq.data;
+  // 2) check user_vouchers assigned to this user
+  const uv = await supabase.from('user_vouchers').select('*').eq('user_id', me.user_id).eq('voucher_id', voucher.voucher_id).maybeSingle();
+  if(uv.error || !uv.data){ couponPct = 0; couponMessage.textContent = 'Mã chưa được cấp cho bạn'; couponMessage.classList.remove('d-none'); couponMessage.classList.add('text-danger'); recalc(); return; }
+  if(uv.data.is_used){ couponPct = 0; couponMessage.textContent = 'Mã đã được sử dụng'; couponMessage.classList.remove('d-none'); couponMessage.classList.add('text-danger'); recalc(); return; }
+  // 3) check expiry and min order
+  if(voucher.expires_at && new Date(voucher.expires_at) < new Date()){ couponPct = 0; couponMessage.textContent = 'Mã đã hết hạn'; couponMessage.classList.remove('d-none'); couponMessage.classList.add('text-danger'); recalc(); return; }
+  const subtotal = cartRows.reduce((s,ci)=> s + Number(prodMap.get(ci.product_id)?.price||0)*Number(ci.quantity||0), 0);
+  if(Number(voucher.min_order_amount||0) > subtotal){ couponPct = 0; couponMessage.textContent = `Mã yêu cầu đơn tối thiểu ${VND(voucher.min_order_amount)}`; couponMessage.classList.remove('d-none'); couponMessage.classList.add('text-danger'); recalc(); return; }
+
+  // OK apply
+  couponPct = Number(voucher.discount_percent||0);
+  appliedUserVoucherId = uv.data.user_voucher_id;
+  couponMessage.textContent = `Đã áp dụng mã ${voucher.voucher_code} giảm ${couponPct}%`;
+  couponMessage.classList.remove('d-none'); couponMessage.classList.add('text-success');
+  recalc();
+};
+
+// Checkout VNPay (tích hợp thực) - tạo orders, xóa cart, gọi backend để thanh toán
+const API_BASE = 'http://localhost:3000';
+document.getElementById('checkout').onclick = async () => {
+  if (!cartRows.length) return;
+
+  const checkoutBtn = document.getElementById('checkout');
+  const originalText = checkoutBtn.innerHTML;
+  checkoutBtn.innerHTML = '<span class="loading-spinner me-2"></span> Đang xử lý...';
+  checkoutBtn.disabled = true;
+
+  try {
+    // Group by store
+    const grouped = cartRows.reduce((m, x) => {
+      const sid = prodMap.get(x.product_id)?.store_id;
+      (m[sid]=m[sid]||[]).push(x);
+      return m;
+    }, {});
+
+    const ordersCreated = [];
+
+    for (const [sid, items] of Object.entries(grouped)) {
+      // Tính tiền
+      const subtotal = items.reduce((s,i)=>{
+        const unit = Number(prodMap.get(i.product_id)?.price || 0);
+        return s + unit * Number(i.quantity||0);
+      },0);
+      const discount = Math.round(subtotal * (couponPct/100));
+      const total = Math.max(0, subtotal - discount);
+
+      // 1) Tạo order (status: pending)
+      const ins = await supabase.from('orders').insert([{
+        buyer_id: me.user_id,
+        store_id: Number(sid),
+        total_price: total,
+        payment_method: 'VNPay',
+        order_status: 'pending',
+        created_at: new Date().toISOString()
+      }]).select('order_id').single();
+      
+      if(ins.error) throw new Error('Lỗi tạo đơn: '+ins.error.message);
+      const order_id = ins.data.order_id;
+
+      // 2) Tạo order details
+      const details = items.map(i=>{
+        const unit = Number(prodMap.get(i.product_id)?.price || 0);
+        return {
+          order_id,
+          product_id: i.product_id,
+          quantity: i.quantity,
+          price_each: unit
+        };
+      });
+      
+      const d1 = await supabase.from('order_details').insert(details);
+      if(d1.error) throw new Error('Lỗi chi tiết đơn: '+d1.error.message);
+
+      ordersCreated.push({ order_id, total });
+    }
+
+    // 3) Xóa cart
+    await supabase.from('cart_items').delete().eq('user_id', me.user_id);
+    
+    // 4) Mark voucher as used (nếu áp dụng)
+    if(appliedUserVoucherId){
+      await supabase.from('user_vouchers').update({ is_used: true }).eq('user_voucher_id', appliedUserVoucherId);
+    }
+
+    // 5) Gọi backend tạo link VNPay thanh toán
+    if(ordersCreated.length > 0) {
+      const firstOrder = ordersCreated[0];
+      console.log('Sending payment request:', {
+        amount: firstOrder.total,
+        orderId: firstOrder.order_id,
+        userId: me.user_id
+      });
+      
+      const response = await fetch(API_BASE + '/api/create-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: firstOrder.total,
+          orderId: firstOrder.order_id,
+          userId: me.user_id,
+          orderInfo: `Order #${firstOrder.order_id}`
+        })
+      });
+
+      console.log('Response status:', response.status);
+      
+      if(!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Lỗi tạo link thanh toán');
+      }
+
+      const data = await response.json();
+      console.log('VNPay response:', data);
+      console.log('Response keys:', Object.keys(data));
+
+      // Redirect to VNPay payment URL - handle all possible key names
+      const paymentUrl = data.paymentUrl || data.checkoutUrl || data.url || Object.values(data).find(v => typeof v === 'string' && v.includes('vnpayment'));
+      
+      if(paymentUrl) {
+        // Lưu orderId để check sau
+        sessionStorage.setItem('lastOrderId', firstOrder.order_id);
+        window.location.href = paymentUrl;
+      } else {
+        throw new Error('Không nhận được URL thanh toán từ VNPay. Response: ' + JSON.stringify(data));
+      }
+    }
+
+  } catch(error) {
+    alert('Lỗi: '+error.message);
+    checkoutBtn.innerHTML = originalText;
+    checkoutBtn.disabled = false;
+    console.error('Checkout error:', error);
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniStore | Seller Dashboard (Ops++)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root{--primary:#4361ee;--primary-light:#4895ef;--dark:#1e1e2d;--radius:12px;--shadow:0 4px 20px rgba(0,0,0,.08)}
+    body{background:#f5f7fb;font-family:'Segoe UI',sans-serif}
+    .navbar{background:linear-gradient(135deg,var(--dark),#2d3748)}
+    .navbar-brand{color:#4cc9f0!important;font-weight:700}
+    .card{border:none;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:1.25rem}
+    .card-header{background:#fff;font-weight:600}
+    .table thead{background:linear-gradient(90deg,#4361ee,#4895ef);color:#fff}
+    .product-img{width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #eaeaea}
+    .loading-spinner{width:2rem;height:2rem;border:3px solid rgba(0,0,0,.15);border-top-color:#4361ee;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .filter-group .form-control,.filter-group .form-select{max-width:200px}
+    .filter-group .w-260{max-width:260px}
+    .inline-edit{min-width:70px}
+    .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:6px;border:1px solid #eee}
+    .linkify{color:#0d6efd;cursor:pointer;text-decoration:underline}
+    .modal-header.bg-gradient{background:linear-gradient(90deg,#4361ee,#4895ef);color:#fff}
+    .product-cover{width:120px;height:120px;border-radius:12px;object-fit:cover;border:1px solid #eee}
+    .cover-lg{width:160px;height:160px}
+    .badge-overdue{background:#ffe8e8;color:#c1121f;border:1px solid #ffc9c9}
+    .print-label{font-size:12px;border:1px dashed #999;padding:8px;border-radius:8px;max-width:300px}
+    .star{color:#ffb703; cursor:pointer}
+    /* Toast container */
+    #toastArea{position:fixed; top:12px; right:12px; z-index:1080}
+
+    /* Chat — sidebar */
+    #chat-sidebar{transition:all .28s cubic-bezier(.2,.9,.3,1)}
+    #chat-sidebar .header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(90deg,#4361ee,#4895ef);color:#fff;font-weight:600}
+    #chat-sidebar .header .right{display:flex;align-items:center;gap:8px}
+    #chat-sidebar .header .mini-btn{background:transparent;border:1px solid rgba(255,255,255,.18);color:#fff;padding:4px 8px;border-radius:8px;cursor:pointer}
+    #chat-sidebar .buyer-row{padding:10px 12px;border-bottom:1px solid #f1f3f6;cursor:pointer;display:flex;align-items:center;gap:10px}
+    #chat-sidebar .buyer-row .avatar{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #eee}
+    #chat-sidebar .empty{padding:28px;text-align:center;color:#7b8794}
+    #chat-sidebar.collapsed{width:64px; height:64px; overflow:visible}
+    #chat-sidebar.collapsed #chatBuyerList{display:none}
+    #chat-sidebar.collapsed .header{justify-content:center}
+
+    /* Chat window */
+    #chat-window-seller{border-radius:12px;box-shadow:0 12px 40px rgba(9,30,66,.25);transition:transform .22s ease,opacity .22s ease;transform:translateY(6px);opacity:1}
+    #chat-window-seller .header{background:linear-gradient(90deg,#4361ee,#4895ef);color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+    #chat-window-seller #chatMessagesSeller{background:#fbfcfe;padding:12px;overflow:auto;border-bottom:1px solid #eee}
+    #chat-window-seller input{border-radius:8px}
+    /* subtle scrollbar */
+    #chatBuyerList::-webkit-scrollbar, #chatMessagesSeller::-webkit-scrollbar{width:8px;height:8px}
+    #chatBuyerList::-webkit-scrollbar-thumb, #chatMessagesSeller::-webkit-scrollbar-thumb{background:rgba(0,0,0,.08);border-radius:8px}
+
+    /* Keep external chat DOM usable but visually hidden (this page only) */
+    #chat-messages, #chat-input, #chat-send, #chat, #chat-window { position: absolute !important; left: -9999px !important; top: -9999px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; pointer-events: none !important; }
+    /* unified popup */
+    #chat-popup{position:fixed; right:10px; bottom:10px; width:380px; max-height:80vh; background:#fff;border-radius:12px;box-shadow:0 18px 50px rgba(15,30,60,.25);z-index:11000;display:none;overflow:hidden;display:flex;flex-direction:column}
+    #chat-popup .popup-header{background:linear-gradient(90deg,#4361ee,#4895ef);color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+    #chat-popup .popup-tabs{display:flex;gap:6px;padding:8px;background:#f5f7fb}
+    #chat-popup .popup-tabs button{flex:1;border-radius:8px;border:0;padding:8px;font-weight:600;background:transparent;cursor:pointer}
+    #chat-popup .popup-tabs button.active{background:linear-gradient(90deg,#4b7cff,#2e7dff);color:#fff}
+    #chat-popup .popup-body{flex:1;overflow:auto;background:#fff;padding:0}
+    #chat-popup .popup-footer{padding:8px;border-top:1px solid #eee;background:#fff}
+    /* enhanced chat list styles */
+    .chat-item{padding:10px 12px; border-bottom:1px solid #f1f3f6; display:flex; align-items:center; gap:10px; cursor:pointer}
+    .chat-item:hover{background:#f8fbff}
+    .chat-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e9eefc;color:#2a45a8;font-weight:700;flex:0 0 44px}
+    .chat-avatar.empty{background:#eee;color:#999}
+    .chat-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .chat-meta{flex:1;min-width:0}
+    .chat-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .chat-snippet{font-size:13px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .chat-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+    .chat-timestamp{font-size:12px;color:#9aa0ab}
+    .chat-unread{background:#dc2626;color:#fff;padding:4px 6px;border-radius:999px;font-size:12px}
+    .chat-item.unread{background:#fff7f7}
+    #chatPopupList .chat-search{padding:8px 12px;border-bottom:1px solid #eee}
+    #chatPopupList .chat-search input{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eefc}
+    .chat-active-dot{width:10px;height:10px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,0.12)}
+    .section-header{padding:8px 12px;background:#f1f5f9;font-weight:700;color:#2447c1}
+    /* floating minimized bubble */
+    #sellerChatBubble{position:fixed; right:20px; bottom:20px; width:56px; height:56px; border-radius:50%; display:none; align-items:center; justify-content:center; z-index:12000; color:#fff; cursor:pointer; box-shadow:0 8px 30px rgba(15,30,60,.25); background:linear-gradient(135deg,#4361ee,#4895ef);}
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg unified-navbar px-4">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">
+      <i class="fas fa-shopping-cart"></i>
+      E-Shop
+    </a>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto" id="nav-menu"></ul>
+    </div>
+  </div>
+</nav>
+
+<div id="toastArea"></div>
+
+<div class="container my-4">
+  <h2 class="mb-3"><i class="fa-solid fa-gauge me-2"></i>Quản lý cửa hàng</h2>
+<!-- CHAT SIDEBAR -->
+<div id="chat-sidebar" 
+     style="position:fixed; right:12px; bottom:12px; width:280px; height:420px;
+            background:#fff; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.15);
+            z-index:9999; display:flex; flex-direction:column; overflow:hidden">
+
+  <div class="header">
+    <span>💬 Khách đang chat</span>
+    <div class="right">
+      <span id="chatTotalUnread" class="badge bg-danger">0</span>
+      <button id="btnToggleChat" class="mini-btn" title="Thu nhỏ" onclick="toggleChatSidebar()">▾</button>
+    </div>
+  </div>
+
+  <div id="chatBuyerList" style="flex:1; overflow-y:auto">
+    <div class="text-center text-muted py-3">Đang tải...</div>
+  </div>
+</div>
+
+  <!-- TỔNG QUAN -->
+  <div class="row" id="summary">
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body text-center">
+      <div class="text-muted">Tổng sản phẩm</div><div class="h3 mb-0" id="count-products">0</div></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body text-center">
+      <div class="text-muted">Tổng đơn</div><div class="h3 mb-0" id="count-orders">0</div></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body text-center">
+      <div class="text-muted">Doanh thu (₫)</div><div class="h3 mb-0" id="total-revenue">0</div></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card"><div class="card-body text-center">
+      <div class="text-muted">Tỉ lệ giao thành công</div><div class="h3 mb-0" id="deliver-rate">0%</div></div></div></div>
+  </div>
+
+  <!-- BIỂU ĐỒ -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa fa-chart-column me-2"></i>Doanh thu theo tháng</span>
+          <div class="btn-group btn-group-sm">
+            <button id="btn6m" class="btn btn-outline-primary active">6 tháng</button>
+            <button id="btn12m" class="btn btn-outline-primary">12 tháng</button>
+          </div>
+        </div>
+        <div class="card-body"><canvas id="revenueChart" height="110"></canvas></div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header"><i class="fa fa-chart-pie me-2"></i>Phễu trạng thái đơn</div>
+        <div class="card-body"><canvas id="statusChart" height="240"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP KHÁCH & CAPITAL INVENTORY -->
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header"><i class="fa fa-users me-2"></i>Top khách mua nhiều</div>
+        <div class="card-body" id="top-buyers"><div class="text-muted">Đang tính...</div></div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa fa-warehouse me-2"></i>Capital in Inventory</span>
+          <button id="btnLowStockQuick" class="btn btn-sm btn-outline-warning">Sắp hết hàng</button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Sản phẩm</th><th class="text-end">Giá</th><th class="text-end">Tồn</th><th class="text-end">Giá trị</th></tr></thead>
+              <tbody id="capitalTable"><tr><td colspan="4" class="text-center py-3 text-muted">Đang tải...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SẢN PHẨM -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span><i class="fa fa-list me-2"></i>Sản phẩm của bạn</span>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#productModal"><i class="fa fa-plus me-1"></i>Thêm</button>
+        <button class="btn btn-outline-secondary btn-sm" id="btnBulkActive"><i class="fa fa-eye me-1"></i>Hiển thị</button>
+        <button class="btn btn-outline-secondary btn-sm" id="btnBulkInactive"><i class="fa fa-eye-slash me-1"></i>Ẩn</button>
+        <button class="btn btn-outline-success btn-sm" id="btnImport"><i class="fa fa-file-import me-1"></i>Import CSV</button>
+        <input id="importFile" type="file" accept=".csv" class="d-none">
+      </div>
+    </div>
+
+    <!-- BỘ LỌC + SAVED FILTERS -->
+    <div class="p-3 border-bottom filter-group d-flex flex-wrap gap-2 align-items-center">
+      <input id="kw" class="form-control w-260" placeholder="Tìm tên sản phẩm...">
+      <select id="fcate" class="form-select"><option value="">Tất cả danh mục</option></select>
+      <select id="fstatus" class="form-select">
+        <option value="">Tất cả trạng thái</option>
+        <option value="active">Đang bán</option>
+        <option value="inactive">Ngừng bán</option>
+      </select>
+      <input id="pmin" type="number" class="form-control" placeholder="Giá từ">
+      <input id="pmax" type="number" class="form-control" placeholder="Giá đến">
+      <input id="stockMax" type="number" class="form-control" placeholder="Tồn kho ≤ X">
+      <button id="btnFilter" class="btn btn-primary"><i class="fa fa-filter me-1"></i>Lọc</button>
+      <div class="ms-auto d-flex gap-2">
+        <select id="savedFilters" class="form-select"><option value="">Bộ lọc đã lưu</option></select>
+        <button id="btnSaveFilter" class="btn btn-outline-primary btn-sm"><i class="fa fa-bookmark me-1"></i>Lưu bộ lọc</button>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="chkAll"></th>
+              <th>Ảnh</th><th>Tên</th><th>Danh mục</th><th class="text-end">Giá</th><th class="text-end">Tồn</th><th>TT</th><th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="productTable">
+            <tr><td colspan="8" class="text-center py-4"><div class="loading-spinner"></div> Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="p-3 d-flex justify-content-between align-items-center">
+        <div><small id="pagingInfo" class="text-muted"></small></div>
+        <div class="btn-group btn-group-sm">
+          <button id="prevPage" class="btn btn-outline-secondary">« Trước</button>
+          <button id="nextPage" class="btn btn-outline-secondary">Sau »</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ĐƠN HÀNG -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span><i class="fa fa-clipboard-list me-2"></i>Đơn hàng gần đây</span>
+      <div class="d-flex gap-2">
+        <button id="btnOverdue" class="btn btn-outline-danger btn-sm">Quá hạn (SLA)</button>
+      </div>
+    </div>
+    <div class="p-3 border-bottom d-flex flex-wrap gap-2">
+      <input id="oid" class="form-control" placeholder="Mã đơn #">
+      <select id="ostatus" class="form-select">
+        <option value="">Tất cả trạng thái</option>
+        <option value="pending">Đang chờ</option>
+        <option value="confirmed">Đã xác nhận</option>
+        <option value="shipping">Đang giao</option>
+        <option value="delivered">Đã giao</option>
+        <option value="cancelled">Đã hủy</option>
+      </select>
+      <input id="dateFrom" type="date" class="form-control">
+      <input id="dateTo" type="date" class="form-control">
+      <input id="amin" type="number" class="form-control" placeholder="Tổng tiền ≥">
+      <input id="amax" type="number" class="form-control" placeholder="Tổng tiền ≤">
+      <button id="btnOrderFilter" class="btn btn-primary"><i class="fa fa-filter me-1"></i>Lọc</button>
+      <select id="savedOrderFilters" class="form-select ms-auto"><option value="">Bộ lọc đơn đã lưu</option></select>
+      <button id="btnSaveOrderFilter" class="btn btn-outline-primary btn-sm"><i class="fa fa-bookmark me-1"></i>Lưu bộ lọc</button>
+      <button id="btnExportOrders" class="btn btn-outline-primary btn-sm"><i class="fa fa-file-export me-1"></i>Xuất CSV</button>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th class="text-end">Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th></th></tr></thead>
+          <tbody id="orderTable">
+            <tr><td colspan="6" class="text-center py-4"><div class="loading-spinner"></div> Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PRODUCT CRUD + VARIANTS + DISCOUNT -->
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-gradient"><h5 class="modal-title"><i class="fa fa-box me-2"></i><span id="pmTitle">Thêm sản phẩm</span></h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" id="productTabs" role="tablist">
+          <li class="nav-item" role="presentation"><button class="nav-link active" id="tab-basic" data-bs-toggle="tab" data-bs-target="#pane-basic" type="button" role="tab">Thông tin</button></li>
+          <li class="nav-item" role="presentation"><button class="nav-link" id="tab-variants" data-bs-toggle="tab" data-bs-target="#pane-variants" type="button" role="tab">Biến thể</button></li>
+          <li class="nav-item" role="presentation"><button class="nav-link" id="tab-pricing" data-bs-toggle="tab" data-bs-target="#pane-pricing" type="button" role="tab">Giá nhanh</button></li>
+        </ul>
+        <div class="tab-content pt-3">
+          <div class="tab-pane fade show active" id="pane-basic">
+            <form id="productForm">
+              <input type="hidden" id="editId">
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <div class="mb-3"><label class="form-label">Tên</label><input id="pname" class="form-control" required></div>
+                  <div class="mb-3"><label class="form-label">Danh mục</label><select id="pcate" class="form-select" required></select></div>
+                  <div class="row">
+                    <div class="col-md-6 mb-3"><label class="form-label">Giá (₫)</label><input id="pprice" type="number" min="0" class="form-control" required></div>
+                    <div class="col-md-6 mb-3"><label class="form-label">Tồn kho</label><input id="pstock" type="number" min="0" class="form-control" value="0"></div>
+                  </div>
+                  <div class="mb-3"><label class="form-label">Mô tả</label><textarea id="pdesc" rows="3" class="form-control"></textarea></div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Ảnh</label>
+                  <input id="pimg" type="file" accept="image/*" class="form-control">
+                  <img id="imgPreview" class="mt-2 rounded border d-none" style="max-width:100%">
+                </div>
+              </div>
+              <button class="btn btn-primary w-100 mt-2"><i class="fa fa-save me-1"></i>Lưu</button>
+            </form>
+          </div>
+          <div class="tab-pane fade" id="pane-variants">
+            <div id="variantArea" class="small text-muted">Đang tải...</div>
+            <div class="input-group input-group-sm mt-2">
+              <input id="vName" class="form-control" placeholder="Tên biến thể (VD: Đỏ 128GB)">
+              <input id="vPrice" type="number" class="form-control" placeholder="Giá">
+              <input id="vStock" type="number" class="form-control" placeholder="Tồn">
+              <input id="vSku" class="form-control" placeholder="SKU">
+              <button id="btnAddVariant" class="btn btn-outline-primary">Thêm</button>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="pane-pricing">
+            <div class="d-flex align-items-center gap-2">
+              <input id="discountPercent" type="number" class="form-control" placeholder="% giảm tạm thời (0-90)" min="0" max="90">
+              <button id="btnApplyDiscount" class="btn btn-outline-primary btn-sm">Áp dụng</button>
+              <button id="btnClearDiscount" class="btn btn-outline-secondary btn-sm">Xóa</button>
+            </div>
+            <div class="form-text mt-2">Lưu local theo từng sản phẩm, chỉ ảnh hưởng hiển thị giá ngoài danh sách/chi tiết (không ghi DB).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ORDER DETAIL + NOTE + RMA + SHIPPING LABEL -->
+<div class="modal fade" id="orderModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-gradient"><h5 class="modal-title"><i class="fa fa-receipt me-2"></i>Đơn <span id="omId"></span></h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div id="orderDetail" class="print-area"></div>
+        <div class="row g-2 align-items-center mt-2">
+          <div class="col-auto"><label class="col-form-label">Trạng thái</label></div>
+          <div class="col-auto">
+            <select id="oStatus" class="form-select">
+              <option value="pending">Đang chờ</option><option value="confirmed">Đã xác nhận</option>
+              <option value="shipping">Đang giao</option><option value="delivered">Đã giao</option><option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
+          <div class="col"><input id="cancelReason" class="form-control d-none" placeholder="Lý do hủy (tùy chọn)"></div>
+          <div class="col-12 col-md-6"><textarea id="sellerNote" class="form-control" rows="2" placeholder="Ghi chú nội bộ (chỉ Seller thấy)"></textarea></div>
+          <div class="col-auto ms-auto d-flex gap-2">
+            <button id="btnCreateReturn" class="btn btn-outline-danger"><i class="fa fa-rotate-left me-1"></i>Tạo yêu cầu hoàn</button>
+            <button id="btnPrintLabel" class="btn btn-outline-secondary"><i class="fa fa-ticket me-1"></i>In tem</button>
+            <button id="btnSaveOrder" class="btn btn-primary"><i class="fa fa-save me-1"></i>Cập nhật</button>
+          </div>
+        </div>
+        <div id="labelArea" class="print-label mt-3 d-none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT PREVIEW MODAL -->
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-gradient"><h5 class="modal-title"><i class="fa fa-file-import me-2"></i>Nhập sản phẩm từ CSV</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead><tr><th>#</th><th>Tên</th><th>Danh mục</th><th>Giá</th><th>Tồn</th><th>Ảnh</th><th>Mô tả</th></tr></thead>
+            <tbody id="importPreview"></tbody>
+          </table>
+        </div>
+        <button id="btnConfirmImport" class="btn btn-primary"><i class="fa fa-check me-1"></i>Nhập</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ===== Supabase =====
+const SUPABASE_URL='https://qpnqsvueowqtqnzqdyqh.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwbnFzdnVlb3dxdHFuenFkeXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5ODg1NDMsImV4cCI6MjA3NTU2NDU0M30.dtNEnYlLLa9mTP9Oi6uvS7PkQ2IoH6SMhXemPa0uSfs';
+if (!window.supabase_client) {
+  window.supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+var supabase = window.supabase_client;
+
+  // ===== Auth =====
+  const user=JSON.parse(localStorage.getItem('currentUser'));
+  if(!user||user.role_id!==2){ alert('Bạn không có quyền!'); location.href='login.html'; }
+  document.getElementById('nav-menu').innerHTML = `
+    <li class="nav-item"><a class="nav-link" href="index.html">Trang chủ</a></li>
+    <li class="nav-item"><a class="nav-link text-info" href="profile.html"><i class="fas fa-user me-1"></i> ${user.username || user.email}</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Đăng xuất</a></li>
+  `;// ===== State =====
+let store=null,categories=[],products=[],productsView=[],page=1,pageSize=10,orders=[],currentOrder=null;
+let buyerMap=new Map(); let hasVariantsTable=false; let hasReturnsTable=false; let hasSellerNoteColumn=false;
+let importRows=[];
+
+// ===== Toast =====
+function showToast(msg,type='info'){ const id='t'+Date.now(); const bg = type==='success'?'bg-success text-white': type==='danger'?'bg-danger text-white': type==='warning'?'bg-warning':'bg-light'; const el=document.createElement('div'); el.id=id; el.className=`toast align-items-center ${bg} border-0 mb-2`; el.setAttribute('role','alert'); el.innerHTML=`<div class="d-flex"><div class="toast-body">${msg}</div><button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div>`; document.getElementById('toastArea').appendChild(el); const t=new bootstrap.Toast(el,{delay:3000}); t.show(); setTimeout(()=>el.remove(),3500); }
+
+// ===== Utils =====
+const VND=v=>Number(v||0).toLocaleString('vi-VN')+' ₫';
+function storagePathFromUrl(url){ const i=url.indexOf('/object/public/'); if(i<0) return null; return url.substring(i+16); }
+async function upload(bucket,file,prefix=''){ const name=`${prefix}${Date.now()}_${file.name}`; const {error}=await supabase.storage.from(bucket).upload(name,file); if(error) throw error; const {data}=supabase.storage.from(bucket).getPublicUrl(name); return data.publicUrl; }
+async function removeByUrl(url){ const path=storagePathFromUrl(url); if(!path) return; const [bucket,...rest]=path.split('/'); await supabase.storage.from(bucket).remove([rest.join('/')]); }
+function setCache(key,data,minutes){ localStorage.setItem(key, JSON.stringify({data, exp: Date.now()+minutes*60000})); }
+function getCache(key){ const raw=localStorage.getItem(key); if(!raw) return null; try{ const obj=JSON.parse(raw); if(Date.now()>obj.exp){ localStorage.removeItem(key); return null; } return obj.data; }catch{ return null; } }
+const discountKey=id=>`disc_${id}`;
+const featuredKey='featuredIds';
+const noteKey=id=>`seller_note_${id}`;
+const savedFiltersKey='seller_saved_filters';
+const savedOrderFiltersKey='seller_saved_order_filters';
+
+// ===== Init =====
+init();
+async function init(){
+  // store
+  const rs=await supabase.from('stores').select('*').eq('user_id',user.user_id).maybeSingle();
+  store=rs.data||null; if(!store){ showToast('Không tìm thấy cửa hàng','danger'); return; }
+
+  // categories with cache 24h
+  const cache=getCache('categories_cache');
+  if(cache){ categories=cache; } else{ const rc=await supabase.from('categories').select('*').order('category_name'); categories=rc.data||[]; setCache('categories_cache', categories, 60*24); }
+  document.getElementById('pcate').innerHTML=categories.map(c=>`<option value="${c.category_id}">${c.category_name}</option>`).join('');
+  document.getElementById('fcate').innerHTML='<option value="">Tất cả danh mục</option>'+categories.map(c=>`<option value="${c.category_id}">${c.category_name}</option>`).join('');
+
+  // detect optional schema
+ hasVariantsTable = false;
+hasReturnsTable  = false;
+hasSellerNoteColumn = await columnExists('orders','seller_note');
+
+
+  // products & orders
+  await refreshProducts();
+  await refreshOrders();
+  drawRevenueChart(6); drawStatusChart();
+
+  // top buyers & capital
+  buildTopBuyers();
+  buildCapitalTable();
+
+  // controls
+  document.getElementById('btn6m').onclick=()=>{ drawRevenueChart(6); toggleRange(true); };
+  document.getElementById('btn12m').onclick=()=>{ drawRevenueChart(12); toggleRange(false); };
+  document.getElementById('btnFilter').onclick=applyProductFilter;
+  document.getElementById('chkAll').onclick=e=>document.querySelectorAll('.rowChk').forEach(ch=>ch.checked=e.target.checked);
+  document.getElementById('prevPage').onclick=()=>{ if(page>1){page--; renderProducts();}};
+  document.getElementById('nextPage').onclick=()=>{ const max=Math.ceil(productsView.length/pageSize)||1; if(page<max){page++; renderProducts();}};
+  document.getElementById('btnBulkActive').onclick=()=>bulkUpdateStatus('active');
+  document.getElementById('btnBulkInactive').onclick=()=>bulkUpdateStatus('inactive');
+  document.getElementById('pimg').addEventListener('change', e=>{
+    const f=e.target.files?.[0]; const img=document.getElementById('imgPreview');
+    if(!f){ img.classList.add('d-none'); return; } img.src=URL.createObjectURL(f); img.classList.remove('d-none');
+  });
+  document.getElementById('productForm').addEventListener('submit', saveProduct);
+  document.getElementById('btnApplyDiscount').onclick=applyDiscount;
+  document.getElementById('btnClearDiscount').onclick=clearDiscount;
+  document.getElementById('btnLowStockQuick').onclick=()=>{ document.getElementById('stockMax').value=5; applyProductFilter(); };
+
+  document.getElementById('btnOrderFilter').onclick=applyOrderFilter;
+  document.getElementById('btnExportOrders').onclick=exportOrdersCSV;
+  document.getElementById('btnOverdue').onclick=()=>{ filterOverdue(); };
+
+  // Saved filters
+  document.getElementById('btnSaveFilter').onclick=saveCurrentFilter;
+  document.getElementById('savedFilters').onchange=loadSavedFilter;
+  document.getElementById('btnSaveOrderFilter').onclick=saveCurrentOrderFilter;
+  document.getElementById('savedOrderFilters').onchange=loadSavedOrderFilter;
+  hydrateSavedFilters();
+  hydrateSavedOrderFilters();
+
+  // Import CSV
+  document.getElementById('btnImport').onclick=()=>document.getElementById('importFile').click();
+  document.getElementById('importFile').addEventListener('change', handleImportFile);
+  document.getElementById('btnConfirmImport').onclick=confirmImport;
+
+  // realtime orders
+  supabase.channel('orders_seller_channel').on('postgres_changes',{event:'INSERT',schema:'public',table:'orders'},payload=>{
+    const o=payload.new; if(o.store_id===store.store_id){ showToast(`🔔 Đơn mới #${o.order_id} - ${VND(o.total_price)}`,'success'); refreshOrders(); drawStatusChart(); buildTopBuyers(); }
+  }).subscribe();
+}
+
+function toggleRange(is6){ document.getElementById('btn6m').classList.toggle('active',is6); document.getElementById('btn12m').classList.toggle('active',!is6); }
+
+async function tableExists(table){
+  try{
+    const r = await supabase.from(table).select('*').limit(1);
+    if (!r.error) return true;
+    return false;
+  }catch{
+    return false;
+  }
+}
+async function columnExists(table, col){ try{ const r=await supabase.from(table).select(col).limit(1); return !(r.error && r.error.message?.includes('column')); }catch{ return false; } }
+
+// ===== Products =====
+async function refreshProducts(){
+  const r=await supabase.from('products').select('*').eq('store_id',store.store_id).order('created_at',{ascending:false});
+  products=r.data||[];
+  document.getElementById('count-products').innerText=products.length;
+  applyProductFilter();
+  buildCapitalTable();
+}
+
+function displayPrice(p){
+  const d=Number(localStorage.getItem(discountKey(p.product_id))||0);
+  const price=Number(p.price)||0;
+  if(!d||d<=0) return VND(price);
+  const discounted= Math.round(price*(1-d/100));
+  return `<span class="text-decoration-line-through text-muted me-1">${VND(price)}</span><span class="fw-semibold text-success">${VND(discounted)}</span> <span class="badge bg-warning text-dark">-${d}%</span>`;
+}
+
+function applyProductFilter(){
+  const kw=(document.getElementById('kw').value||'').toLowerCase().trim();
+  const cate=document.getElementById('fcate').value;
+  const stt=document.getElementById('fstatus').value;
+  const pmin=Number(document.getElementById('pmin').value||0);
+  const pmaxRaw=document.getElementById('pmax').value;
+  const pmax=pmaxRaw===''?Number.POSITIVE_INFINITY:Number(pmaxRaw);
+  const sMaxRaw=document.getElementById('stockMax').value;
+  const sMax=sMaxRaw===''?Number.POSITIVE_INFINITY:Number(sMaxRaw);
+  productsView=products.filter(p=>{
+    const byKw=!kw||(p.product_name||'').toLowerCase().includes(kw);
+    const byCate=!cate||String(p.category_id)===String(cate);
+    const byStt=!stt||p.status===stt;
+    const byPrice=Number(p.price)>=pmin && Number(p.price)<=pmax;
+    const byStock=Number(p.stock)<=sMax;
+    return byKw && byCate && byStt && byPrice && byStock;
+  });
+  page=1; renderProducts();
+}
+
+function renderProducts(){
+  const tbody=document.getElementById('productTable');
+  if(!productsView.length){ tbody.innerHTML=`<tr><td colspan="8" class="text-center py-4 text-muted">Không có sản phẩm</td></tr>`; document.getElementById('pagingInfo').innerText=''; return; }
+  const start=(page-1)*pageSize, end=Math.min(start+pageSize, productsView.length);
+  const slice=productsView.slice(start,end);
+  const cateName=id => (categories.find(c=>c.category_id===id)||{}).category_name || '-';
+  const featured=JSON.parse(localStorage.getItem(featuredKey)||'[]');
+  tbody.innerHTML = slice.map(p=>`
+    <tr>
+      <td><input type="checkbox" class="rowChk" value="${p.product_id}"></td>
+      <td><img src="${p.image_url||'https://via.placeholder.com/50x50?text=No+Img'}" class="product-img" onerror="this.src='https://via.placeholder.com/50x50?text=No+Img'"></td>
+      <td class="fw-semibold">${p.product_name} <i class="fa fa-star star ${featured.includes(p.product_id)?'':'opacity-25'}" title="Ghim nổi bật" onclick="toggleFeatured(${p.product_id})"></i></td>
+      <td>${cateName(p.category_id)}</td>
+      <td class="text-end">${displayPrice(p)}</td>
+      <td class="text-end">${p.stock}</td>
+      <td><span class="badge ${p.status==='active'?'bg-success':'bg-secondary'}">${p.status==='active'?'Đang bán':'Ngừng bán'}</span></td>
+      <td class="text-nowrap">
+        <button class="btn btn-sm btn-outline-primary me-1" onclick='editProduct(${JSON.stringify(p)})'><i class="fa fa-pen"></i></button>
+        <button class="btn btn-sm btn-outline-secondary me-1" onclick='duplicateProduct(${p.product_id})'><i class="fa fa-copy"></i></button>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.product_id}, '${p.image_url||''}')"><i class="fa fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('pagingInfo').innerText=`Hiển thị ${start+1}-${end} / ${productsView.length}`;
+}
+
+function toggleFeatured(id){
+  const arr=JSON.parse(localStorage.getItem(featuredKey)||'[]');
+  const idx=arr.indexOf(id); if(idx>=0) arr.splice(idx,1); else arr.push(id);
+  localStorage.setItem(featuredKey, JSON.stringify(arr)); renderProducts();
+}
+
+async function bulkUpdateStatus(status){
+  const ids=Array.from(document.querySelectorAll('.rowChk:checked')).map(ch=>Number(ch.value));
+  if(!ids.length) return showToast('Hãy chọn sản phẩm','warning');
+  for(const id of ids){ await supabase.from('products').update({status}).eq('product_id',id); const t=products.find(p=>p.product_id===id); if(t) t.status=status; }
+  showToast(`Đã cập nhật ${ids.length} sản phẩm`,'success'); applyProductFilter();
+}
+
+function editProduct(p){
+  document.getElementById('pmTitle').innerText=p? 'Chỉnh sửa sản phẩm':'Thêm sản phẩm';
+  document.getElementById('editId').value=p?.product_id||'';
+  document.getElementById('pname').value=p?.product_name||'';
+  document.getElementById('pcate').value=p?.category_id||'';
+  document.getElementById('pprice').value=p?.price||0;
+  document.getElementById('pstock').value=p?.stock||0;
+  document.getElementById('pdesc').value=p?.description||'';
+  // pricing tab
+  document.getElementById('discountPercent').value = localStorage.getItem(discountKey(p?.product_id))||'';
+  const img=document.getElementById('imgPreview'); if(p?.image_url){ img.src=p.image_url; img.classList.remove('d-none'); } else { img.classList.add('d-none'); }
+  // variants
+  loadVariants(p?.product_id);
+  new bootstrap.Modal('#productModal').show();
+}
+
+async function loadVariants(pid){
+  const area=document.getElementById('variantArea');
+  if(!pid){ area.innerHTML='<span class="text-muted">Lưu sản phẩm trước khi thêm biến thể.</span>'; return; }
+  if(!hasVariantsTable){ area.innerHTML='<span class="text-muted">Chưa có bảng product_variants — tab này ở chế độ chỉ xem.</span>'; return; }
+  const r=await supabase.from('product_variants').select('*').eq('product_id',pid).order('variant_id',{ascending:true});
+  const list=r.data||[];
+  area.innerHTML = list.length? `<ul class="list-group list-group-flush">
+    ${list.map(v=>`<li class="list-group-item d-flex justify-content-between align-items-center">
+      <span>${v.name||v.variant_name||'(no name)'} — ${VND(v.price)} — tồn ${v.stock} — ${v.sku||''}</span>
+      <button class="btn btn-sm btn-outline-danger" onclick="deleteVariant(${v.variant_id})"><i class="fa fa-trash"></i></button>
+    </li>`).join('')}
+  </ul>` : '<span class="text-muted">Chưa có biến thể.</span>';
+  document.getElementById('btnAddVariant').onclick=async (e)=>{
+    e.preventDefault(); if(!hasVariantsTable) return showToast('Chưa có bảng product_variants','warning');
+    const name=document.getElementById('vName').value.trim(); const price=Number(document.getElementById('vPrice').value||0);
+    const stock=Number(document.getElementById('vStock').value||0); const sku=document.getElementById('vSku').value.trim();
+    if(!name) return showToast('Nhập tên biến thể','warning');
+    const {error}=await supabase.from('product_variants').insert([{product_id:pid, name, price, stock, sku}]);
+    if(error) return showToast('Lỗi thêm biến thể: '+error.message,'danger');
+    showToast('Đã thêm biến thể','success'); document.getElementById('vName').value='';document.getElementById('vPrice').value='';document.getElementById('vStock').value='';document.getElementById('vSku').value=''; loadVariants(pid);
+  };
+  window.deleteVariant = async (vid)=>{ const {error}=await supabase.from('product_variants').delete().eq('variant_id',vid); if(error) return showToast('Lỗi xóa: '+error.message,'danger'); showToast('Đã xóa','success'); loadVariants(pid); };
+}
+
+async function duplicateProduct(id){
+  const src=products.find(p=>p.product_id===id); if(!src) return;
+  const clone={...src}; delete clone.product_id;
+  clone.product_name=src.product_name+' (bản sao)'; clone.created_at=new Date().toISOString();
+  const {error}=await supabase.from('products').insert([clone]); if(error) return showToast('Lỗi sao chép: '+error.message,'danger');
+  showToast('Đã nhân bản','success'); await refreshProducts();
+}
+
+async function deleteProduct(id,imageUrl){
+  if(!confirm('Xóa sản phẩm này?')) return;
+  const {error}=await supabase.from('products').delete().eq('product_id',id);
+  if(error) return showToast('Lỗi xóa: '+error.message,'danger');
+  if(imageUrl){ try{ await removeByUrl(imageUrl); }catch(_){ } }
+  showToast('Đã xóa','success'); await refreshProducts();
+}
+
+async function saveProduct(e){
+  e.preventDefault();
+  const id=document.getElementById('editId').value;
+  const data={ product_name:document.getElementById('pname').value, category_id:Number(document.getElementById('pcate').value), price:Number(document.getElementById('pprice').value), stock:Number(document.getElementById('pstock').value), description:document.getElementById('pdesc').value, status:'active', store_id:store.store_id };
+  if(data.price<0||data.stock<0) return showToast('Giá/Tồn kho không hợp lệ','warning');
+  const file=document.getElementById('pimg').files[0];
+  try{
+    if(file){
+      if(id){ const old=products.find(p=>String(p.product_id)===String(id)); if(old?.image_url){ try{await removeByUrl(old.image_url);}catch(_){ } } }
+      data.image_url=await upload('product-images',file,'product_');
+    }
+    if(id){ await supabase.from('products').update(data).eq('product_id',id); }
+    else  { await supabase.from('products').insert([data]); }
+    showToast('Lưu sản phẩm thành công','success');
+    bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+    await refreshProducts();
+  }catch(err){ showToast('Lỗi lưu: '+err.message,'danger'); }
+}
+
+function applyDiscount(e){ if(e) e.preventDefault(); const id=document.getElementById('editId').value; if(!id) return showToast('Lưu sản phẩm trước','warning'); const p=Number(document.getElementById('discountPercent').value||0); if(p<0||p>90) return showToast('Phần trăm 0-90','warning'); localStorage.setItem(discountKey(id), String(p)); showToast('Đã áp dụng giảm tạm thời','success'); renderProducts(); }
+function clearDiscount(e){ if(e) e.preventDefault(); const id=document.getElementById('editId').value; if(!id) return; localStorage.removeItem(discountKey(id)); document.getElementById('discountPercent').value=''; showToast('Đã xóa giảm tạm thời','success'); renderProducts(); }
+
+// ===== Orders =====
+async function refreshOrders(){
+  const r=await supabase.from('orders').select('*').eq('store_id',store.store_id).order('created_at',{ascending:false}).limit(400);
+  orders=r.data||[];
+  document.getElementById('count-orders').innerText=orders.length;
+  const delivered=orders.filter(o=>o.order_status==='delivered').length;
+  document.getElementById('deliver-rate').innerText=orders.length? Math.round(delivered*100/orders.length)+'%':'0%';
+  await hydrateBuyerNames(orders.map(o=>o.buyer_id).filter(Boolean));
+  renderOrders(orders);
+  const revenue=orders.filter(o=>['confirmed','delivered'].includes(o.order_status)).reduce((s,o)=>s+Number(o.total_price||0),0);
+  document.getElementById('total-revenue').innerText=VND(revenue);
+  drawStatusChart();
+}
+
+async function hydrateBuyerNames(ids){ const uniq=Array.from(new Set(ids)); const missing=uniq.filter(id=>!buyerMap.has(id)); if(!missing.length) return; try{ const q=await supabase.from('users').select('user_id, username').in('user_id',missing); if(!q.error && q.data){ q.data.forEach(u=> buyerMap.set(u.user_id,{username:u.username})); } }catch{} }
+
+const SLA_HOURS=24;
+function isOverdue(o){ const created=new Date(o.created_at); return (Date.now()-created.getTime()) > SLA_HOURS*3600*1000 && !['delivered','cancelled'].includes(o.order_status); }
+
+function renderOrders(list){
+  const tb=document.getElementById('orderTable');
+  if(!list.length){ tb.innerHTML=`<tr><td colspan="6" class="text-center py-4 text-muted">Không có đơn</td></tr>`; return; }
+  tb.innerHTML = list.map(o=>{
+    const buyer=buyerMap.get(o.buyer_id);
+const name = buyer
+  ? `${buyer.username}`
+  : `Khách #${o.buyer_id || '-'}`;
+
+
+    const stBadge=o.order_status==='delivered'?'bg-success':o.order_status==='pending'?'bg-warning text-dark':o.order_status==='cancelled'?'bg-danger':'bg-secondary';
+    const overdue = isOverdue(o) ? `<span class="badge badge-overdue ms-1">Cần xử lý</span>` : '';
+    return `<tr>
+      <td class="fw-semibold"><span class="linkify" onclick="openOrder(${o.order_id})">#${o.order_id}</span> ${overdue}</td>
+      <td>${name}</td>
+      <td class="text-end">${VND(o.total_price)}</td>
+      <td><span class="badge ${stBadge}">${o.order_status}</span></td>
+      <td>${new Date(o.created_at).toLocaleDateString('vi-VN')}</td>
+      <td><button class="btn btn-sm btn-outline-primary" onclick="openOrder(${o.order_id})"><i class="fa fa-eye"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterOverdue(){ const out=orders.filter(isOverdue); renderOrders(out); showToast(`Có ${out.length} đơn quá hạn SLA`,'warning'); }
+
+function applyOrderFilter(){
+  const id=document.getElementById('oid').value.trim();
+  const st=document.getElementById('ostatus').value;
+  const df=document.getElementById('dateFrom').value;
+  const dt=document.getElementById('dateTo').value;
+  const amin=document.getElementById('amin').value;
+  const amax=document.getElementById('amax').value;
+  const from=df?new Date(df):null; const to=dt?new Date(dt):null;
+  const out=orders.filter(o=>{
+    const byId=!id||String(o.order_id).includes(id);
+    const bySt=!st||o.order_status===st;
+    const d=new Date(o.created_at);
+    const byDate=(!from||d>=from)&&(!to||d<=new Date(to.getFullYear(),to.getMonth(),to.getDate(),23,59,59));
+    const amount=Number(o.total_price||0);
+    const byAmt=(!amin||amount>=Number(amin))&&(!amax||amount<=Number(amax));
+    return byId&&bySt&&byDate&&byAmt;
+  });
+  renderOrders(out);
+}
+
+// ===== Order Detail + RMA + Note + Label =====
+async function openOrder(orderId){
+  const modal=new bootstrap.Modal('#orderModal'); modal.show();
+  document.getElementById('omId').innerText='#'+orderId;
+  document.getElementById('orderDetail').innerHTML='<div class="text-center py-4"><div class="loading-spinner"></div></div>';
+  const r=await supabase.from('orders').select('*').eq('order_id',orderId).maybeSingle();
+  if(!r.data){ document.getElementById('orderDetail').innerHTML='<div class="text-danger">Không tải được đơn</div>'; return; }
+  currentOrder=r.data;
+  // seller note hydrate
+  const savedLocal=localStorage.getItem(noteKey(orderId));
+  document.getElementById('sellerNote').value = (hasSellerNoteColumn && currentOrder.seller_note!=null) ? currentOrder.seller_note : (savedLocal || '');
+  document.getElementById('oStatus').value=currentOrder.order_status||'pending';
+  document.getElementById('cancelReason').classList.toggle('d-none', currentOrder.order_status!=='cancelled');
+  if(currentOrder.cancel_reason) document.getElementById('cancelReason').value=currentOrder.cancel_reason;
+  // items if any
+  let itemsHtml='<em>Chưa cấu hình bảng chi tiết đơn hàng.</em>';
+  try{ const ro=await supabase.from('order_items').select('product_name, quantity, price').eq('order_id',orderId);
+    if(!ro.error && ro.data && ro.data.length){
+      itemsHtml = `<table class="table table-sm"><thead><tr><th>Sản phẩm</th><th class="text-end">SL</th><th class="text-end">Giá</th></tr></thead><tbody>
+        ${ro.data.map(i=>`<tr><td>${i.product_name}</td><td class="text-end">${i.quantity}</td><td class="text-end">${VND(i.price)}</td></tr>`).join('')}
+      </tbody></table>`;
+    }
+  }catch{}
+  document.getElementById('orderDetail').innerHTML = `
+    <div class="d-flex justify-content-between flex-wrap">
+      <div>
+        <div><strong>Mã đơn:</strong> #${currentOrder.order_id} ${isOverdue(currentOrder)?'<span class="badge badge-overdue ms-1">Cần xử lý</span>':''}</div>
+        <div><strong>Ngày:</strong> ${new Date(currentOrder.created_at).toLocaleString('vi-VN')}</div>
+        <div><strong>Khách:</strong> ${currentOrder.buyer_id||'-'}</div>
+      </div>
+      <div class="text-end">
+        <div><strong>Tổng tiền:</strong> ${VND(currentOrder.total_price)}</div>
+        ${currentOrder.cancel_reason?`<div class="text-danger"><strong>Lý do hủy:</strong> ${currentOrder.cancel_reason}</div>`:''}
+      </div>
+    </div>
+    <hr>${itemsHtml}`;
+
+  // actions
+  document.getElementById('btnSaveOrder').onclick=updateOrderStatus;
+  document.getElementById('btnCreateReturn').onclick=createReturnRequest;
+  document.getElementById('btnPrintLabel').onclick=printLabel;
+}
+
+async function updateOrderStatus(){
+  if(!currentOrder) return;
+  const st=document.getElementById('oStatus').value;
+  const reason=document.getElementById('cancelReason').value||null;
+  const note=document.getElementById('sellerNote').value||null;
+  const payload={ order_status:st, cancel_reason: st==='cancelled'?reason:null };
+  if(hasSellerNoteColumn) payload.seller_note = note;
+  const {error}=await supabase.from('orders').update(payload).eq('order_id', currentOrder.order_id);
+  if(error){ showToast('Lỗi cập nhật: '+error.message,'danger'); return; }
+  if(!hasSellerNoteColumn){ localStorage.setItem(noteKey(currentOrder.order_id), note||''); }
+  showToast('Đã cập nhật đơn','success'); bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide(); await refreshOrders();
+}
+
+async function createReturnRequest(){
+  if(!currentOrder) return;
+  if(!hasReturnsTable){ showToast('Chưa có bảng returns — không thể tạo RMA','warning'); return; }
+  const reason=prompt('Lý do hoàn/đổi?'); if(!reason) return;
+  const {error}=await supabase.from('returns').insert([{ order_id: currentOrder.order_id, reason, status:'requested', created_at:new Date().toISOString() }]);
+  if(error) return showToast('Lỗi tạo RMA: '+error.message,'danger');
+  showToast('Đã tạo yêu cầu hoàn','success');
+}
+
+function printLabel(){
+  const el=document.getElementById('labelArea'); el.classList.remove('d-none');
+  el.innerHTML = `
+    <div><strong>E-Shop</strong></div>
+    <div>Mã đơn: #${currentOrder.order_id}</div>
+    <div>Ngày: ${new Date(currentOrder.created_at).toLocaleString('vi-VN')}</div>
+    <div>Tổng: ${VND(currentOrder.total_price)}</div>
+    <div style="margin-top:6px;border-top:1px dashed #999;padding-top:6px">SCN: ${currentOrder.order_id}-${Date.now().toString().slice(-6)}</div>
+  `;
+  window.print();
+  setTimeout(()=>el.classList.add('d-none'), 500);
+}
+
+// ===== Charts =====
+function drawRevenueChart(months){
+  const ctx=document.getElementById('revenueChart'); const map=new Map();
+  const ok=orders.filter(o=>['confirmed','delivered'].includes(o.order_status));
+  ok.forEach(o=>{ const d=new Date(o.created_at); const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; map.set(key,(map.get(key)||0)+Number(o.total_price||0)); });
+  const now=new Date(); const data=[];
+  for(let i=months-1;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; data.push({label:key,value:map.get(key)||0}); }
+  if(window._chart) window._chart.destroy();
+  window._chart = new Chart(ctx, { type:'bar',
+    data:{ labels:data.map(x=>x.label), datasets:[{ label:'Doanh thu (₫)', data:data.map(x=>x.value) }] },
+    options:{ responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>VND(c.raw)}} },
+      scales:{ y:{ ticks:{ callback:v=>Number(v).toLocaleString('vi-VN') } } } }
+  });
+}
+function drawStatusChart(){
+  const ctx=document.getElementById('statusChart');
+  const groups={pending:0,confirmed:0,shipping:0,delivered:0,cancelled:0};
+  orders.forEach(o=>{ groups[o.order_status]=(groups[o.order_status]||0)+1; });
+  if(window._statusChart) window._statusChart.destroy();
+  window._statusChart = new Chart(ctx, { type:'doughnut',
+    data:{ labels:Object.keys(groups), datasets:[{ data:Object.values(groups) }] },
+    options:{ responsive:true, plugins:{ legend:{position:'bottom'} } } });
+}
+
+// ===== Top Buyers & Capital =====
+function buildTopBuyers(){
+  const box=document.getElementById('top-buyers');
+  if(!orders.length){ box.innerHTML='<div class="text-muted">Chưa có đơn.</div>'; return; }
+  const map=new Map();
+  orders.forEach(o=> map.set(o.buyer_id, (map.get(o.buyer_id)||0)+Number(o.total_price||0)));
+  const top=[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  box.innerHTML = `<ol class="mb-0">${top.map(([bid,amt])=>`<li class="mb-1 d-flex justify-content-between"><span>${(buyerMap.get(bid)?.username)||('Khách #'+bid)}</span><span class="text-muted">${VND(amt)}</span></li>`).join('')}</ol>`;
+}
+
+function buildCapitalTable(){
+  const tb=document.getElementById('capitalTable'); if(!products.length){ tb.innerHTML='<tr><td colspan="4" class="text-center text-muted py-3">Chưa có sản phẩm</td></tr>'; return; }
+  const rows=products.map(p=>({ name:p.product_name, price:Number(p.price||0), stock:Number(p.stock||0), value:Number(p.price||0)*Number(p.stock||0) }))
+                    .sort((a,b)=>b.value-a.value).slice(0,10);
+  tb.innerHTML = rows.map(r=>`<tr><td>${r.name}</td><td class="text-end">${VND(r.price)}</td><td class="text-end">${r.stock}</td><td class="text-end">${VND(r.value)}</td></tr>`).join('');
+}
+
+// ===== Saved Filters =====
+function hydrateSavedFilters(){ const sel=document.getElementById('savedFilters'); const arr=JSON.parse(localStorage.getItem(savedFiltersKey)||'[]'); sel.innerHTML='<option value="">Bộ lọc đã lưu</option>'+arr.map((f,i)=>`<option value="${i}">${f.name}</option>`).join(''); }
+function saveCurrentFilter(){ const name=prompt('Tên bộ lọc?'); if(!name) return; const obj={name, kw:kw.value, cate:fcate.value, st:fstatus.value, pmin:pmin.value, pmax:pmax.value, smax:stockMax.value}; const arr=JSON.parse(localStorage.getItem(savedFiltersKey)||'[]'); arr.push(obj); localStorage.setItem(savedFiltersKey, JSON.stringify(arr)); hydrateSavedFilters(); showToast('Đã lưu bộ lọc','success'); }
+function loadSavedFilter(){ const idx=this.value; if(idx==='') return; const arr=JSON.parse(localStorage.getItem(savedFiltersKey)||'[]'); const f=arr[idx]; if(!f) return; kw.value=f.kw||''; fcate.value=f.cate||''; fstatus.value=f.st||''; pmin.value=f.pmin||''; pmax.value=f.pmax||''; stockMax.value=f.smax||''; applyProductFilter(); }
+
+function hydrateSavedOrderFilters(){ const sel=document.getElementById('savedOrderFilters'); const arr=JSON.parse(localStorage.getItem(savedOrderFiltersKey)||'[]'); sel.innerHTML='<option value="">Bộ lọc đơn đã lưu</option>'+arr.map((f,i)=>`<option value="${i}">${f.name}</option>`).join(''); }
+function saveCurrentOrderFilter(){ const name=prompt('Tên bộ lọc đơn?'); if(!name) return; const obj={name, id:oid.value, st:ostatus.value, df:dateFrom.value, dt:dateTo.value, amin:amin.value, amax:amax.value}; const arr=JSON.parse(localStorage.getItem(savedOrderFiltersKey)||'[]'); arr.push(obj); localStorage.setItem(savedOrderFiltersKey, JSON.stringify(arr)); hydrateSavedOrderFilters(); showToast('Đã lưu bộ lọc đơn','success'); }
+function loadSavedOrderFilter(){ const idx=this.value; if(idx==='') return; const arr=JSON.parse(localStorage.getItem(savedOrderFiltersKey)||'[]'); const f=arr[idx]; if(!f) return; oid.value=f.id||''; ostatus.value=f.st||''; dateFrom.value=f.df||''; dateTo.value=f.dt||''; amin.value=f.amin||''; amax.value=f.amax||''; applyOrderFilter(); }
+
+// ===== Import CSV =====
+function handleImportFile(e){
+  const file=e.target.files?.[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    const text=ev.target.result; const lines=text.split(/\r?\n/).filter(x=>x.trim().length);
+    // Expect header: product_name,category_id,price,stock,description,image_url
+    const header=lines[0].split(',').map(s=>s.trim().toLowerCase());
+    const required=['product_name','category_id','price','stock','description','image_url'];
+    const ok = required.every(k=>header.includes(k));
+    if(!ok){ showToast('CSV sai header. Cần: '+required.join(', '),'danger'); return; }
+    importRows = lines.slice(1).map((line, idx)=>{
+      const cols=line.split(','); const row={}; header.forEach((h,i)=> row[h]=cols[i]||''); row._line=idx+2; return row;
+    }).filter(r=>r.product_name);
+    const tb=document.getElementById('importPreview');
+    tb.innerHTML = importRows.slice(0,50).map((r,i)=>`<tr><td>${i+1}</td><td>${r.product_name}</td><td>${r.category_id}</td><td>${r.price}</td><td>${r.stock}</td><td>${r.image_url}</td><td>${r.description}</td></tr>`).join('');
+    new bootstrap.Modal('#importModal').show();
+  };
+  reader.readAsText(file);
+}
+
+async function confirmImport(){
+  if(!importRows.length) return;
+  // Basic validate
+  const bad = importRows.find(r=> isNaN(Number(r.category_id)) || isNaN(Number(r.price)) || isNaN(Number(r.stock)));
+  if(bad){ showToast('Có dòng sai dữ liệu số ở line '+bad._line,'danger'); return; }
+  const payload = importRows.map(r=>({ product_name:r.product_name, category_id:Number(r.category_id), price:Number(r.price), stock:Number(r.stock), description:r.description, image_url:r.image_url, status:'active', store_id:store.store_id }));
+  const {error}=await supabase.from('products').insert(payload);
+  if(error) return showToast('Lỗi import: '+error.message,'danger');
+  showToast('Đã import sản phẩm','success'); bootstrap.Modal.getInstance(document.getElementById('importModal')).hide(); await refreshProducts();
+}
+
+// ===== Export CSV =====
+function downloadCSV(filename, rows){ const q=v=>`"${String(v??'').replace(/"/g,'""')}"`; const csv=rows.map(r=>r.map(q).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); }
+function exportOrdersCSV(){ const rows=[['Order','Buyer','TotalPrice','Status','CreatedAt']].concat(orders.map(o=>['#'+o.order_id,(buyerMap.get(o.buyer_id)?.username)||('Khách #'+(o.buyer_id||'-')),o.total_price,o.order_status,o.created_at])); downloadCSV(`orders_${new Date().toISOString().slice(0,7)}.csv`, rows); }
+
+// ===== Logout =====
+function logout(){ localStorage.removeItem('currentUser'); location.href='login.html'; }
+</script>
+
+<script>
+let sellerChatLoaded = false;
+
+// Poll cho đến khi chat.js load xong
+const waitChat = setInterval(() => {
+  if (window.CHAT && window.CHAT.me) {
+    sellerChatLoaded = true;
+    clearInterval(waitChat);
+    initSellerChat();
+    // hide/merge external chat UI for this page only (visual consolidation)
+    try{ consolidateExternalChatUI(); }catch(e){}
+  }
+}, 300);
+
+async function initSellerChat() {
+  loadBuyerChatList();
+
+  // Realtime: có tin nhắn mới nào gửi tới seller
+  CHAT.sb.channel('seller_unread_channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
+        const m = payload.new;
+
+        if (m.receiver_id === CHAT.me.user_id) {
+            loadBuyerChatList();
+        }
+    })
+    .subscribe();
+}
+
+// Hide external chat widget UI but keep DOM nodes so chat.js still functions.
+function consolidateExternalChatUI(){
+  const ids=['chat-messages','chat-input','chat-send','chat','chat-window'];
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    // hide the element and nearest container visually but keep it usable to scripts
+    el.style.position='absolute'; el.style.left='-9999px'; el.style.top='-9999px'; el.style.width='1px'; el.style.height='1px'; el.style.overflow='hidden'; el.style.pointerEvents='none';
+    // also hide immediate visible parent if it's likely the widget wrapper
+    const p = el.parentElement;
+    if(p && p!==document.body){ p.style.position='absolute'; p.style.left='-9999px'; p.style.top='-9999px'; p.style.width='1px'; p.style.height='1px'; p.style.overflow='hidden'; p.style.pointerEvents='none'; }
+  });
+
+  // hide common floating wrappers/fab by heuristic selectors
+  const selectors=['.chat-fab','.floating-chat','.chat-floating','.chat-widget','.chats-widget','.widget-chat','.fab-chat'];
+  selectors.forEach(s=>document.querySelectorAll(s).forEach(el=>el.style.display='none'));
+
+  // If chat-messages exists later (inserted asynchronously), mirror to our UI once
+  const mirrorOnce = () => { const src=document.getElementById('chat-messages'); const dst=document.getElementById('chatMessagesSeller'); if(src && dst){ dst.innerHTML = src.innerHTML; dst.scrollTop = dst.scrollHeight; } };
+  mirrorOnce();
+  // run again a few times to catch async inserts
+  [300,800,1500].forEach(t=>setTimeout(mirrorOnce,t));
+  // ensure internal FAB exists (in case external is hidden)
+  try{ ensureInternalFab(); }catch(e){}
+  // prepare unified popup by moving buyer list and chat window into it
+  try{ prepareChatPopup(); }catch(e){}
+}
+
+// Visual helpers for chat (no data changes)
+function toggleChatSidebar(){
+  const el=document.getElementById('chat-sidebar'); if(!el) return;
+  const wasCollapsed = el.classList.contains('collapsed');
+  const nowCollapsed = !wasCollapsed;
+  el.classList.toggle('collapsed', nowCollapsed);
+  localStorage.setItem('seller_chat_collapsed', nowCollapsed? '1':'0');
+  const btn=document.getElementById('btnToggleChat'); if(btn) btn.innerText = nowCollapsed? '▸' : '▾';
+  const fab=document.getElementById('internalChatFab'); if(fab) fab.style.display = nowCollapsed? 'block':'none';
+  // when collapsing, hide chat window to avoid obstruction
+  const win=document.getElementById('chat-window-seller'); if(win && nowCollapsed) win.style.display='none';
+}
+
+// restore collapsed state on load
+try{ if(localStorage.getItem('seller_chat_collapsed')==='1'){ document.getElementById('chat-sidebar').classList.add('collapsed'); const b=document.getElementById('btnToggleChat'); if(b) b.innerText='▸'; } }catch(e){}
+
+// Create an internal FAB inside the sidebar (visible when collapsed) that toggles buyer list / chat
+function ensureInternalFab(){
+  const sidebar=document.getElementById('chat-sidebar'); if(!sidebar) return;
+  let fab=document.getElementById('internalChatFab');
+  if(!fab){
+    fab=document.createElement('button'); fab.id='internalChatFab'; fab.className='internal-fab'; fab.title='Mở chat'; fab.innerHTML='<i class="fa fa-comment"></i>';
+    sidebar.appendChild(fab);
+    fab.addEventListener('click', ()=>{
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      if(isCollapsed){
+        // expand and show buyer list
+        sidebar.classList.remove('collapsed');
+        const tbtn=document.getElementById('btnToggleChat'); if(tbtn) tbtn.innerText='▾';
+        fab.style.display='none';
+        const bl=document.getElementById('chatBuyerList'); if(bl) bl.style.display='block';
+      }else{
+        // collapse and hide chat window
+        sidebar.classList.add('collapsed');
+        const tbtn=document.getElementById('btnToggleChat'); if(tbtn) tbtn.innerText='▸';
+        fab.style.display='block';
+        const win=document.getElementById('chat-window-seller'); if(win) win.style.display='none';
+      }
+    });
+  }
+  fab.style.display = sidebar.classList.contains('collapsed')? 'block':'none';
+}
+
+// Move existing buyer list and chat window into the unified popup
+function prepareChatPopup(){
+  const popup = document.getElementById('chat-popup'); if(!popup) return;
+  const listContainer = document.getElementById('chatPopupList');
+  const chatContainer = document.getElementById('chatPopupChat');
+  const footer = document.getElementById('chatPopupFooter');
+
+  // move buyer list into popup list area
+  const buyerList = document.getElementById('chatBuyerList');
+  if(buyerList && listContainer && !listContainer.contains(buyerList)){
+    listContainer.appendChild(buyerList);
+  }
+
+  // move chat window into popup chat area
+  const chatWindow = document.getElementById('chat-window-seller');
+  if(chatWindow && chatContainer && !chatContainer.contains(chatWindow)){
+    // normalize styles for embedded layout
+    chatWindow.style.position='static'; chatWindow.style.right='auto'; chatWindow.style.bottom='auto'; chatWindow.style.width='100%'; chatWindow.style.height='100%';
+    chatWindow.style.boxShadow='none'; chatWindow.style.display='block';
+    chatContainer.appendChild(chatWindow);
+  }
+
+  // move footer input area if present (we keep original ids)
+  if(footer && chatWindow){
+    const footerRow = chatWindow.querySelector('div[style*="padding:8px"]');
+    if(footerRow) footer.appendChild(footerRow);
+    // show footer only when chat tab active
+    footer.style.display = document.getElementById('tabChatBtn')?.classList.contains('active') ? 'block' : 'none';
+  }
+
+  // wire popup buttons
+  // close button removed — nothing to wire here
+  const tabListBtn = document.getElementById('tabListBtn'); const tabChatBtn = document.getElementById('tabChatBtn');
+  if(tabListBtn) tabListBtn.onclick = ()=>switchChatTab('list');
+  if(tabChatBtn) tabChatBtn.onclick = ()=>switchChatTab('chat');
+  const minBtn = document.getElementById('chatPopupMinimize'); if(minBtn) minBtn.onclick = toggleMinimizeChat;
+
+  // if sidebar was collapsed initially, keep popup hidden; otherwise ensure FAB state
+  const fab = document.getElementById('internalChatFab'); if(fab){ fab.style.display = document.getElementById('chat-sidebar').classList.contains('collapsed')? 'block':'none'; }
+  // apply any persisted minimized state
+  applyMinimizedState();
+}
+
+function showChatPopup(){
+  const popup=document.getElementById('chat-popup'); if(!popup) return; popup.style.display='flex'; popup.setAttribute('aria-hidden','false');
+  // default to list tab
+  switchChatTab('list');
+  // hide internal FAB while popup is open
+  const fab=document.getElementById('internalChatFab'); if(fab) fab.style.display='none';
+}
+
+function hideChatPopup(){
+  const popup=document.getElementById('chat-popup'); if(!popup) return; popup.style.display='none'; popup.setAttribute('aria-hidden','true');
+  // when hide, collapse sidebar and show FAB
+  const sidebar=document.getElementById('chat-sidebar'); if(sidebar) sidebar.classList.add('collapsed');
+  const fab=document.getElementById('internalChatFab'); if(fab) fab.style.display='block';
+}
+
+function switchChatTab(which){
+  const listBtn=document.getElementById('tabListBtn'); const chatBtn=document.getElementById('tabChatBtn');
+  const listArea=document.getElementById('chatPopupList'); const chatArea=document.getElementById('chatPopupChat'); const footer=document.getElementById('chatPopupFooter');
+  if(which==='list'){
+    listBtn.classList.add('active'); chatBtn.classList.remove('active');
+    listArea.style.display='block'; chatArea.style.display='none'; if(footer) footer.style.display='none';
+  }else{
+    listBtn.classList.remove('active'); chatBtn.classList.add('active');
+    listArea.style.display='none'; chatArea.style.display='block'; if(footer) footer.style.display='block';
+  }
+}
+
+// Minimize / restore the chat popup and optionally hide the sidebar buyer list (temporary)
+function applyMinimizedState(){
+  try{
+    const minimized = localStorage.getItem('seller_chat_minimized') === '1';
+    const sidebar = document.getElementById('chat-sidebar');
+    const popup = document.getElementById('chat-popup');
+    const fab = document.getElementById('internalChatFab');
+    ensureChatBubble();
+    if(minimized){
+      if(sidebar) sidebar.style.display = 'none';
+      if(popup) popup.style.display = 'none';
+      if(fab) fab.style.display = 'none';
+      const bubble = document.getElementById('sellerChatBubble'); if(bubble) bubble.style.display='flex';
+    }else{
+      if(sidebar) sidebar.style.display = ''; // restore
+      // keep popup hidden until user opens it
+      if(fab) fab.style.display = document.getElementById('chat-sidebar')?.classList.contains('collapsed')? 'block':'none';
+      const bubble = document.getElementById('sellerChatBubble'); if(bubble) bubble.style.display='none';
+    }
+  }catch(e){console.warn('applyMinimizedState',e)}
+}
+
+function toggleMinimizeChat(){
+  try{
+    const cur = localStorage.getItem('seller_chat_minimized') === '1';
+    if(cur){
+      // restore
+      localStorage.removeItem('seller_chat_minimized');
+      const sidebar=document.getElementById('chat-sidebar'); if(sidebar) sidebar.style.display='';
+      showChatPopup();
+      const fab=document.getElementById('internalChatFab'); if(fab) fab.style.display = document.getElementById('chat-sidebar')?.classList.contains('collapsed')? 'block':'none';
+      const bubble = document.getElementById('sellerChatBubble'); if(bubble) bubble.style.display='none';
+    }else{
+      // minimize: hide sidebar and popup, show FAB
+      localStorage.setItem('seller_chat_minimized','1');
+      const sidebar=document.getElementById('chat-sidebar'); if(sidebar) sidebar.style.display='none';
+      hideChatPopup();
+      const fab=document.getElementById('internalChatFab'); if(fab) fab.style.display='none';
+      ensureChatBubble(); const bubble = document.getElementById('sellerChatBubble'); if(bubble) bubble.style.display='flex';
+    }
+  }catch(e){console.warn('toggleMinimizeChat',e)}
+}
+
+// Ensure the floating bubble exists and is wired
+function ensureChatBubble(){
+  try{
+    let b=document.getElementById('sellerChatBubble');
+    if(!b){
+      b=document.createElement('div'); b.id='sellerChatBubble'; b.title='Mở chat'; b.innerHTML='<i class="fa fa-comment" style="font-size:20px"></i>';
+      document.body.appendChild(b);
+      b.addEventListener('click', ()=>{
+        // on click, clear minimized state and open popup
+        localStorage.removeItem('seller_chat_minimized');
+        const bubble=document.getElementById('sellerChatBubble'); if(bubble) bubble.style.display='none';
+        // show sidebar and popup
+        const sidebar=document.getElementById('chat-sidebar'); if(sidebar) sidebar.style.display='';
+        showChatPopup();
+        // hide any internal FAB inside sidebar
+        const fab=document.getElementById('internalChatFab'); if(fab) fab.style.display = document.getElementById('chat-sidebar')?.classList.contains('collapsed')? 'block':'none';
+      });
+    }
+    return b;
+  }catch(e){console.warn('ensureChatBubble',e)}
+}
+
+// Load danh sách buyer đã chat
+async function loadBuyerChatList() {
+  try {
+    // NOTE: do NOT request columns that don't exist (ex: unread_seller) — causes 400
+    const r = await supabase
+      .from("conversations")
+      .select("conversation_id,buyer_id,seller_id,type,created_at,last_message")
+      .eq("seller_id", user.user_id)
+      .order("created_at", { ascending: false });
+
+    if (r.error) {
+      console.error('[chat] loadBuyerChatList error', r.error);
+      document.getElementById("chatBuyerList").innerHTML = `<div class="text-muted text-center p-3">Lỗi tải chat</div>`;
+      return;
+    }
+
+    let list = r.data || [];
+    // prioritize conversations that have a last_message (non-empty) and recent activity
+    list = list.sort((a,b)=>{
+      const aHas = a.last_message?1:0; const bHas = b.last_message?1:0;
+      if(aHas !== bHas) return bHas - aHas; // ones with messages first
+      const ta = new Date(a.created_at).getTime()||0; const tb = new Date(b.created_at).getTime()||0;
+      return tb - ta; // recent first
+    });
+    const box = document.getElementById("chatBuyerList");
+
+    // If you don't have unread counters in conversations table, treat as 0
+    const unreadTotal = list.reduce((sum, c) => sum + (c.unread_seller || 0), 0);
+    document.getElementById("chatTotalUnread").innerText = unreadTotal;
+
+    if (!list.length) {
+      box.innerHTML = `<div class="text-muted text-center p-3">Chưa có ai nhắn</div>`;
+      return;
+    }
+
+    // Fetch buyer display names (try to include full_name safely), then fetch latest messages
+    const buyerIds = Array.from(new Set(list.map(c => c.buyer_id).filter(Boolean)));
+    const buyersMap = new Map();
+    if (buyerIds.length) {
+      try{
+        // attempt to get avatar and full_name if available
+        const ru = await supabase.from('users').select('user_id,username,full_name,avatar_url').in('user_id', buyerIds);
+        if(!ru.error && ru.data){ ru.data.forEach(u=> buyersMap.set(u.user_id, { name: (u.full_name||u.username||'').trim(), avatar: u.avatar_url||null })); }
+        else throw new Error('no-fullname');
+      }catch(_){
+        try{
+          const ru2 = await supabase.from('users').select('user_id,username').in('user_id', buyerIds);
+          if(!ru2.error && ru2.data) ru2.data.forEach(u=> buyersMap.set(u.user_id, { name:(u.username||'').trim(), avatar:null }));
+        }catch(e){ console.warn('fetch users fallback err',e); }
+      }
+    }
+
+    // Fetch latest message per conversation to sort by recency and show accurate snippets
+    const convIds = Array.from(new Set(list.map(c=>c.conversation_id).filter(Boolean)));
+    const latestMap = new Map();
+    if(convIds.length){
+      try{
+        // include sender_id so we can tell who sent the last message
+        const rm = await supabase.from('chat_messages').select('conversation_id,created_at,content,sender_id').in('conversation_id', convIds).order('created_at', { ascending: false });
+        if(!rm.error && rm.data){
+          for(const m of rm.data){
+            if(!latestMap.has(m.conversation_id)){
+              latestMap.set(m.conversation_id, { created_at: m.created_at, content: m.content, sender_id: m.sender_id });
+            }
+          }
+        }
+      }catch(e){ console.warn('fetch latest messages err',e); }
+    }
+
+    // fetch unread counts per conversation (handle both 'is_read' and 'seen' column names)
+    const unreadMap = new Map();
+    try{
+      if(convIds.length){
+        // try using is_read first (common schema in your DB screenshot), fall back to seen
+        let ru = await supabase.from('chat_messages').select('conversation_id').in('conversation_id', convIds).eq('receiver_id', user.user_id).eq('is_read', false)
+.not('sender_id', 'eq', user.user_id);
+        if(ru.error){
+          // fallback to 'seen' if is_read not available
+          ru = await supabase.from('chat_messages').select('conversation_id').in('conversation_id', convIds).eq('receiver_id', user.user_id).eq('seen', false);
+        }
+        if(!ru.error && ru.data){ ru.data.forEach(m=> unreadMap.set(m.conversation_id, (unreadMap.get(m.conversation_id)||0)+1)); }
+      }
+    }catch(e){ console.warn('fetch unread counts',e); }
+
+    // reorder list by latest message timestamp (if available), otherwise by conversation created_at
+    list = list.sort((a,b)=>{
+      const am = latestMap.get(a.conversation_id); const bm = latestMap.get(b.conversation_id);
+      if(am && bm){ return new Date(bm.created_at) - new Date(am.created_at); }
+      if(am) return -1; if(bm) return 1;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    // reorder list by latest message timestamp (if available), otherwise by conversation created_at
+    list = list.sort((a,b)=>{
+      const am = latestMap.get(a.conversation_id); const bm = latestMap.get(b.conversation_id);
+      if(am && bm){ return new Date(bm.created_at) - new Date(am.created_at); }
+      if(am) return -1; if(bm) return 1;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    // Build richer list with sections and timestamps
+    const now = Date.now();
+    function timeAgo(ts){
+      if(!ts) return '';
+      const d = new Date(ts).getTime(); const diff = Math.floor((now - d)/1000);
+      if(diff < 60) return diff + 's';
+      if(diff < 3600) return Math.floor(diff/60) + 'm';
+      if(diff < 86400) return Math.floor(diff/3600) + 'h';
+      const dt = new Date(ts); return dt.toLocaleDateString('vi-VN');
+    }
+
+    const sections = { active:[], unread:[], recent:[], older:[] };
+    for(const c of list){
+      const lm = latestMap.get(c.conversation_id);
+      const lastAt = lm?.created_at || c.created_at;
+      const lastTime = lastAt ? new Date(lastAt).getTime() : 0;
+      const diff = now - lastTime;
+      const isActive = lastTime && diff < 5*60*1000; // 5 minutes
+      const isRecent = lastTime && diff < 24*3600*1000; // 24 hours
+      const unread = unreadMap.get(c.conversation_id) || c.unread_seller || 0;
+      const userInfo = buyersMap.get(c.buyer_id) || { name: `Khách #-`, avatar: null };
+      // prefix snippet with 'Bạn:' if last message sender is the seller
+      const lastSender = latestMap.get(c.conversation_id)?.sender_id;
+      const youPrefix = lastSender && Number(lastSender) === Number(user.user_id) ? 'Bạn: ' : '';
+      const name = userInfo.name;
+      const avatar = userInfo.avatar;
+      const snippet = (youPrefix + (lm?.content || c.last_message || '')).slice(0,120);
+      const initials = (name || '').split(' ').filter(Boolean).slice(-2).map(n=>n[0]).join('').toUpperCase() || '';
+      const item = {conv:c, name, snippet, initials, unread, lastAt, isActive, isRecent};
+      if(isActive) sections.active.push(item);
+      else if(unread>0) sections.unread.push(item);
+      else if(isRecent) sections.recent.push(item);
+      else sections.older.push(item);
+    }
+
+    function renderItem(it){
+      const escName = String(it.name||'').replace(/'/g,"\\'");
+      const userInfo = buyersMap.get(it.conv.buyer_id) || { avatar: null };
+      const avatarHtml = userInfo.avatar ? `<div class="chat-avatar"><img src="${userInfo.avatar}" alt=""></div>` : (it.initials ? `<div class="chat-avatar">${it.initials}</div>` : `<div class="chat-avatar empty"></div>`);
+      const activeDot = it.isActive ? `<div class="chat-active-dot" title="Đang hoạt động"></div>` : '';
+      const time = timeAgo(it.lastAt);
+      const unreadHtml = it.unread>0? `<div class="chat-unread">${it.unread}</div>` : '';
+      // include conversation_id and buyer_id data attributes and use handler to mark read first
+      const convId = it.conv.conversation_id || '';
+      const buyerId = it.conv.buyer_id || '';
+      return `
+        <div class="chat-item${it.unread>0? ' unread':''}" data-conv="${convId}" data-buyer="${buyerId}" data-name="${(it.name||'').toLowerCase()}" data-snippet="${(it.snippet||'').toLowerCase()}" onclick="handleOpenConversation('${convId}', ${buyerId}, '${escName}')">
+          ${avatarHtml}
+          <div class="chat-meta">
+            <div class="chat-name">${it.name} ${it.isActive?'<span style=\"margin-left:6px\">'+activeDot+'</span>':''}</div>
+            <div class="chat-snippet">${it.snippet || ''}</div>
+          </div>
+          <div class="chat-right">
+            <div class="chat-timestamp">${time}</div>
+            ${unreadHtml}
+          </div>
+        </div>`;
+    }
+
+    let html = '<div class="chat-search"><input id="chatSearch" placeholder="Tìm kiếm khách..." /></div>';
+    if(sections.active.length){ html += `<div class="section-header">Đang hoạt động</div>` + sections.active.map(renderItem).join(''); }
+    if(sections.unread.length){ html += `<div class="section-header">Tin mới</div>` + sections.unread.map(renderItem).join(''); }
+    if(sections.recent.length){ html += `<div class="section-header">Tin gần đây</div>` + sections.recent.map(renderItem).join(''); }
+    if(sections.older.length){ html += `<div class="section-header">Tin cũ</div>` + sections.older.map(renderItem).join(''); }
+    box.innerHTML = html || '<div class="text-muted text-center p-3">Chưa có ai nhắn</div>';
+    // attach search filter
+    const searchEl = document.getElementById('chatSearch'); if(searchEl){ searchEl.addEventListener('input', ()=>{
+      const v = searchEl.value.trim().toLowerCase(); document.querySelectorAll('#chatBuyerList .chat-item').forEach(it=>{
+        const n = it.getAttribute('data-name')||''; const s = it.getAttribute('data-snippet')||'';
+        it.style.display = (!v || n.includes(v) || s.includes(v))? 'flex':'none';
+      });
+    }); }
+
+    // expose handler for opening conversation that marks messages as read before opening
+    window.handleOpenConversation = async function(convId, buyerId, name){
+      try{
+        // If we have a conversation id, mark messages where receiver is this seller as read
+        if(convId){
+          try{ await supabase.from('chat_messages').update({ is_read:true }).eq('conversation_id', convId).eq('receiver_id', user.user_id).eq('is_read', false); }catch(e){ console.warn('mark conv read error',e); }
+        }else if(buyerId){
+          // try to resolve conversation id then mark
+          try{
+            const q = await supabase.from('conversations').select('conversation_id').eq('buyer_id', buyerId).eq('seller_id', user.user_id).maybeSingle();
+            if(q.data && q.data.conversation_id){ await supabase.from('chat_messages').update({ is_read:true }).eq('conversation_id', q.data.conversation_id).eq('receiver_id', user.user_id).eq('is_read', false); }
+          }catch(e){ console.warn('resolve conv id error',e); }
+        }
+        // reload list so UI updates immediately
+        try{ await loadBuyerChatList(); }catch(e){ console.warn('reload list',e); }
+      }catch(e){ console.warn('handleOpenConversation error',e); }
+      // open the chat UI (always open even if marking failed)
+      try{ showChatPopup(); switchChatTab('chat'); openSellerChat(buyerId, name);}catch(e){ console.warn('open after mark',e); }
+    };
+  } catch (err) {
+    console.error('[chat] loadBuyerChatList exception', err);
+    document.getElementById("chatBuyerList").innerHTML = `<div class="text-muted text-center p-3">Lỗi tải chat</div>`;
+  }
+}
+ 
+
+
+// Seller mở chat với buyer
+async function openSellerChat(buyerId, name) {
+  try{
+    if(name) document.getElementById("chatHeaderName").innerText = name;
+    // expand sidebar and hide internal FAB
+    const sidebar=document.getElementById('chat-sidebar'); if(sidebar){ sidebar.classList.remove('collapsed'); const f=document.getElementById('internalChatFab'); if(f) f.style.display='none'; const tbtn=document.getElementById('btnToggleChat'); if(tbtn) tbtn.innerText='▾'; }
+    document.getElementById("chat-window-seller").style.display = "block";
+    // Gọi chat.js → load đúng conversation
+    if(window.CHAT && CHAT.openSellerChat) CHAT.openSellerChat(buyerId);
+
+    // Load message liên tục (mirror when available)
+    const msgInterval = setInterval(() => {
+      if (CHAT.currentConversation) {
+        CHAT.loadMessages();
+        updateSellerMessages();
+        clearInterval(msgInterval);
+      }
+    }, 200);
+  }catch(e){ console.error('openSellerChat error',e); }
+}
+
+// ...existing code...
+
+async function initSellerChat() {
+  loadBuyerChatList();
+
+  // Realtime: có tin nhắn mới nào gửi tới seller
+  CHAT.sb.channel('seller_unread_channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async payload => {
+        const m = payload.new;
+        // nếu message gửi tới chính seller, refresh list
+        if (m.receiver_id === CHAT.me.user_id) {
+            loadBuyerChatList();
+        }
+        // nếu seller đang mở conversation tương ứng, load messages và mark seen
+        if (CHAT.currentConversation && m.conversation_id === CHAT.currentConversation.conversation_id) {
+          await CHAT.loadMessages();
+          await CHAT.markMessagesSeen();
+        }
+    })
+    .subscribe();
+}
+
+// Load danh sách buyer đã chat
+async function openSellerChat(buyerId, name) {
+  try{
+    if(name) document.getElementById("chatHeaderName").innerText = name;
+    const sidebar=document.getElementById('chat-sidebar'); if(sidebar){ sidebar.classList.remove('collapsed'); const f=document.getElementById('internalChatFab'); if(f) f.style.display='none'; const tbtn=document.getElementById('btnToggleChat'); if(tbtn) tbtn.innerText='▾'; }
+    document.getElementById("chat-window-seller").style.display = "block";
+    // Gọi chat.js → load đúng conversation
+    if(window.CHAT && CHAT.openSellerChat) await CHAT.openSellerChat(buyerId);
+    // Khi conversation đã có, load messages & mark seen
+    const waiter = setInterval(async () => {
+      if (CHAT.currentConversation) {
+        await CHAT.loadMessages();
+        try{ await CHAT.markMessagesSeen(); }catch(_){}
+        updateSellerMessages();
+        clearInterval(waiter);
+      }
+    }, 150);
+  }catch(e){ console.error('openSellerChat error', e); }
+}
+
+// ...existing code...
+
+function updateSellerMessages() {
+  const src = document.getElementById("chat-messages");
+  const dst = document.getElementById("chatMessagesSeller");
+  dst.innerHTML = src.innerHTML;
+  dst.scrollTop = dst.scrollHeight;
+}
+
+function sendSellerChat() {
+  const msg = document.getElementById("chatInputSeller").value.trim();
+  if (!msg) return;
+  document.getElementById("chatInputSeller").value = "";
+
+  document.getElementById("chat-input").value = msg;
+  document.getElementById("chat-send").click();
+
+  updateSellerMessages();
+}
+
+function closeSellerChat() {
+  document.getElementById("chat-window-seller").style.display = "none";
+  // collapse sidebar and show internal FAB to avoid obstruction
+  const sidebar=document.getElementById('chat-sidebar'); if(sidebar){ sidebar.classList.add('collapsed'); }
+  const fab=document.getElementById('internalChatFab'); if(fab) fab.style.display='block';
+  const tbtn=document.getElementById('btnToggleChat'); if(tbtn) tbtn.innerText='▸';
+}
+</script>
+
+<!-- CHAT WINDOW -->
+<!-- unified CHAT POPUP (list + chat tabs) -->
+<div id="chat-popup" aria-hidden="true">
+  <div class="popup-header">
+    <div style="font-weight:700">💬 Chat</div>
+    <div>
+      <button id="chatPopupMinimize" class="btn btn-sm btn-light" title="Thu nhỏ" style="border-radius:8px; margin-right:6px">─</button>
+    </div>
+  </div>
+  <div class="popup-tabs">
+    <button id="tabListBtn" class="active" onclick="switchChatTab('list')">Danh sách</button>
+    <button id="tabChatBtn" onclick="switchChatTab('chat')">Trò chuyện</button>
+  </div>
+  <div class="popup-body">
+    <div id="chatPopupList" style="display:block; padding:8px;">
+      <!-- buyer list will be moved here by JS -->
+    </div>
+    <div id="chatPopupChat" style="display:none; height:100%;">
+      <!-- chat window will be moved here by JS -->
+    </div>
+  </div>
+  <div class="popup-footer" id="chatPopupFooter" style="display:none">
+    <!-- moved input will appear here if needed -->
+  </div>
+</div>
+
+<!-- legacy chat-window-seller remains in DOM but will be relocated into popup by JS -->
+<div id="chat-window-seller" 
+     style="position:fixed; right:300px; bottom:12px; width:320px; height:460px;
+            background:#fff; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.2);
+            display:none; z-index:9999; overflow:hidden;">
+
+  <div style="background:#4361ee; padding:10px 12px; color:#fff; display:flex;
+              justify-content:space-between; align-items:center;">
+    <span id="chatHeaderName">Đối tác</span>
+    <button onclick="closeSellerChat()" 
+            style="border:none; background:none; color:#fff; font-size:20px;">×</button>
+  </div>
+
+  <div id="chatMessagesSeller" 
+       style="flex:1; height:330px; overflow-y:auto; padding:12px"></div>
+
+  <div style="padding:8px; border-top:1px solid #ddd; display:flex; gap:6px">
+    <input id="chatInputSeller" class="form-control" placeholder="Nhập tin nhắn...">
+    <button onclick="sendSellerChat()" class="btn btn-primary">
+      <i class="fa fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+<script src="chat-loader.js"></script>
+
+</body>
+</html>
